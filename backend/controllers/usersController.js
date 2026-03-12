@@ -1,9 +1,10 @@
 import {
     getAllUsers,
+    getUserById,
     createUser,
     updateUser,
     deleteUser
-}   from "../models/usersModel.js";
+} from "../models/usersModel.js";
 
 export const getUsers = async (req, res) => {
     try {
@@ -11,6 +12,20 @@ export const getUsers = async (req, res) => {
         res.json(rows);
     } catch (error) {
         res.status(500).json(error);
+    }
+};
+
+export const getUser = async (req, res) => {
+    try {
+        const [rows] = await getUserById(req.params.id);
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: "User không tồn tại" });
+        }
+
+        res.json(rows[0]);
+    } catch (error) {
+        res.status(500).json({ message: "Lỗi server" });
     }
 };
 

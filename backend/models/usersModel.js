@@ -5,6 +5,11 @@ export const getAllUsers = () => {
     return db.promise().query(sql);
 };
 
+export const getUserById = (id) => {
+    const sql = "select * from users where id = ?";
+    return db.promise().query(sql, [id]);
+};
+
 export const createUser = (id, name) => {
     const sql = "insert into users (id, name) values (?, ?)";
     return db.promise().query(sql, [id, name]);
