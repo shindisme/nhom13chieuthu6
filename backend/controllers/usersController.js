@@ -1,6 +1,6 @@
 import {
     getAllUsers,
-    getUserById,
+    getUserById as findUserById,
     createUser,
     updateUser,
     deleteUser
@@ -15,9 +15,9 @@ export const getUsers = async (req, res) => {
     }
 };
 
-export const getUser = async (req, res) => {
+export const getUserById = async (req, res) => {
     try {
-        const [rows] = await getUserById(req.params.id);
+        const [rows] = await findUserById(req.params.id);
 
         if (rows.length === 0) {
             return res.status(404).json({ message: "User không tồn tại" });
