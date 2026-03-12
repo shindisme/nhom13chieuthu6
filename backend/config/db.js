@@ -14,12 +14,4 @@ const db = mysql.createConnection({
     queueLimit: 0
 });
 
-db.connect((err) => {
-    if (err) {
-        console.log("ket noi that bai", err);
-    } else {
-        console.log("ket noi thanh cong");
-    }
-});
-
 export default db;
