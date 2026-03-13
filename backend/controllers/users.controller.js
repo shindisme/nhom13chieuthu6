@@ -4,7 +4,7 @@ import {
     createUser,
     updateUser,
     deleteUser
-} from "../models/usersModel.js";
+} from "../models/users.model.js";
 
 export const getUsers = async (req, res) => {
     try {
