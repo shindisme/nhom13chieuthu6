@@ -1,42 +1,32 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-
-const API = "https://nhom13chieuthu6.onrender.com/api/users";
+import { useState } from "react";
+import userService from "../services/userService";
+import useFetch from "../hooks/useFetch";
 
 const UsersManage = () => {
 
-    const [users, setUsers] = useState([]);
+    const { data: users, loading, error, refetch } = useFetch("/users");
     const [id, setID] = useState("");
     const [name, setName] = useState("");
     const [editId, setEditId] = useState(null);
     const [showModal, setShowModal] = useState(false);
 
-    const fetchUsers = async () => {
-        const res = await axios.get(API);
-        setUsers(res.data);
-    };
-
-    useEffect(() => {
-        fetchUsers();
-    }, []);
-
     // THÊM USER
     const handleAdd = async () => {
-    if (!name.trim()) {
-        alert("Vui lòng nhập tên");
-        
-        return;
-    }
-    try {
-        await axios.post(API, { id,name });
-        setID("");
-        setName("");
-        setShowModal(false);
-        fetchUsers();
-    } catch (error) {
-        console.error("Lỗi thêm user:", error);
-    }
-};
+        if (!name.trim()) {
+            alert("Vui lòng nhập tên");
+
+            return;
+        }
+        try {
+            await userService.insert({ id, name });
+            setID("");
+            setName("");
+            setShowModal(false);
+            refetch();
+        } catch (error) {
+            console.error("Lỗi thêm user:", error);
+        }
+    };
 
     // MỞ MODAL SỬA
     const handleEdit = (user) => {
@@ -47,18 +37,21 @@ const UsersManage = () => {
 
     // UPDATE USER
     const handleUpdate = async () => {
-        await axios.put(`${API}/${editId}`, { name });
+        await userService.update(editId, { name });
         setEditId(null);
         setName("");
         setShowModal(false);
-        fetchUsers();
+        refetch();
     };
 
     // DELETE USER
     const handleDelete = async (id) => {
-        await axios.delete(`${API}/${id}`);
-        fetchUsers();
+        await userService.delete(id);
+        refetch();
     };
+
+    if (loading) return <div className="p-6 text-center">Đang tải...</div>;
+    if (error) return <div className="p-6 text-center text-red-500">Lỗi: {error.message}</div>;
 
     return (
         <div className="p-6 bg-gray-100 min-h-screen">
@@ -94,7 +87,7 @@ const UsersManage = () => {
                                 <th className="p-3 border-b text-left">STT</th>
                                 <th className="p-3 border-b text-left">ID</th>
                                 <th className="p-3 border-b text-left">Tên</th>
-                                <th className="p-3 border-b text-left">Hành động</th>   
+                                <th className="p-3 border-b text-left">Hành động</th>
                             </tr>
                         </thead>
 
