@@ -4,7 +4,6 @@ import cors from "cors";
 import { AppRouter } from "./routes/index.js";
 
 dotenv.config();
-
 const app = express();
 
 app.use(cors());
