@@ -2,71 +2,105 @@ import db from '../config/db.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 
+const validateLogin = (email, password) => {
+    const errors = [];
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!email || !emailRegex.test(email.trim())) {
+        errors.push("Email không hợp lệ.");
+    }
+    if (!password || password.length < 1) {
+        errors.push("Vui lòng nhập mật khẩu.");
+    }
+    return errors;
+};
+
 export const login = async (req, res) => {
     const { email, password } = req.body;
+    console.log("BẮT ĐẦU KIỂM TRA ĐĂNG NHẬP");
+    console.log("Email nhận từ Client:", `[${email}]`);
 
-    console.log("--- KIỂM TRA ĐĂNG NHẬP ---");
-    console.log("Email:", email);
-
+    const errors = validateLogin(email, password);
+    if (errors.length > 0) {
+        return res.status(400).json({ message: "Dữ liệu không hợp lệ.", errors });
+    }
+    const cleanEmail = email.trim();
     try {
-        // SỬA TRỰC TIẾP: Await db trước khi gọi execute
         const connection = await db;
+        const query = `
+            SELECT tk.*, tr.MaRole 
+            FROM taikhoan tk 
+            LEFT JOIN taikhoan_role tr ON tk.MaTK = tr.MaTK 
+            WHERE tk.Email = ?
+        `;
 
-        // Truy vấn tìm User và Role
-        const [rows] = await connection.execute(
-            `SELECT tk.*, tr.MaRole 
-             FROM taikhoan tk 
-             JOIN taikhoan_role tr ON tk.MaTK = tr.MaTK 
-             WHERE tk.Email = ?`,
-            [email]
-        );
+        const [checkAll] = await connection.execute("SELECT Email FROM taikhoan");
+        console.log("Danh sách tất cả email trong bảng này:", checkAll);
+        const [rows] = await connection.execute(query, [cleanEmail]);
+        console.log("Số lượng user tìm thấy trong DB:", rows.length);
+        if (rows.length > 0) {
+            console.log("Thông tin User tìm được:", {
+                MaTK: rows[0].MaTK,
+                Email: rows[0].Email,
+                MaRole: rows[0].MaRole
+            });
+        }
 
         if (rows.length === 0) {
-            console.log("=> LỖI: Email không tồn tại.");
             return res.status(404).json({
                 success: false,
-                message: "Tài khoản không tồn tại"
+                message: "Tài khoản không tồn tại trong hệ thống."
             });
         }
 
         const user = rows[0];
 
-        // So sánh mật khẩu (Kiệt check lại cột MatKhau trong DB nhé)
+
         const isMatch = await bcrypt.compare(password, user.MatKhau);
 
         if (!isMatch) {
-            console.log("=> LỖI: Sai mật khẩu.");
-            return res.status(400).json({
+            console.log("Mật khẩu không khớp!");
+            return res.status(401).json({
                 success: false,
-                message: "Mật khẩu không chính xác"
+                message: "Mật khẩu không chính xác."
             });
         }
 
-        // Tạo Token JWT
+
         const token = jwt.sign(
             { id: user.MaTK, roleId: user.MaRole, email: user.Email },
-            process.env.JWT_SECRET || 'nhom13_secret_key',
-            { expiresIn: '12h' }
+            process.env.JWT_SECRET || 'nhom13chieuthu6',
+            { expiresIn: '24h' }
         );
 
-        console.log("=> ĐĂNG NHẬP THÀNH CÔNG!");
+        console.log("Đăng nhập thành công!");
 
         res.json({
             success: true,
-            message: "Đăng nhập thành công",
-            token: token,
+            message: "Đăng nhập thành công.",
+            token,
             roleId: user.MaRole,
-            user: {
-                id: user.MaTK,
-                email: user.Email
-            }
+            user: { id: user.MaTK, email: user.Email }
         });
 
     } catch (error) {
-        console.error("=> LỖI HỆ THỐNG:", error.message);
+        console.error("LỖI HỆ THỐNG:", error.message);
         res.status(500).json({
             success: false,
-            message: "Lỗi hệ thống: " + error.message
+            message: "Lỗi server",
+            error: error.stack,
+            error: error.message
         });
+    }
+};
+
+export const logout = async (req, res) => {
+    try {
+        res.status(200).json({
+            success: true,
+            message: "Đăng xuất thành công."
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Lỗi khi đăng xuất", error: error.message });
     }
 };

@@ -19,11 +19,11 @@ db.promise = () => db;
 
 db.getConnection()
   .then(connection => {
-    console.log(' -<Kết nối Database thành công!>-');
-    connection.release(); 
+    console.log('Kết nối Database thành công!');
+    connection.release();
   })
   .catch(err => {
-    console.error('❌ Lỗi kết nối Database:', err.message);
+    console.error('Lỗi kết nối Database:', err.message);
   });
 
 export default db;
