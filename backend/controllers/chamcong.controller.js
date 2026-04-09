@@ -19,7 +19,8 @@ export const getAll = async (req, res) => {
         const [rows] = await getAllChamCong();
         res.json(rows);
     } catch (error) {
-        res.status(500).json({ message: "Lỗi server", error });
+        console.error("Lỗi lấy danh sách chấm công:", error);
+        res.status(500).json({ message: "Lỗi server", error: error.message });
     }
 };
 
@@ -39,13 +40,15 @@ export const getById = async (req, res) => {
 
         res.json(rows[0]);
     } catch (error) {
-        res.status(500).json({ message: "Lỗi server", error });
+        console.error(`Lỗi lấy chấm công ID ${id}:`, error);
+        res.status(500).json({ message: "Lỗi server", error: error.message });
     }
 };
 
 export const getChamCongByNV = async (req, res) => {
     const { maNV } = req.params;
 
+    // Lưu ý: Nếu Mã NV của bạn là chuỗi (VD: "NV01"), hãy bỏ dòng kiểm tra isNaN này
     if (isNaN(maNV) || Number(maNV) <= 0) {
         return res.status(400).json({ message: "Mã nhân viên không hợp lệ." });
     }
@@ -54,7 +57,8 @@ export const getChamCongByNV = async (req, res) => {
         const [rows] = await getChamCongByMaNV(maNV);
         res.json(rows);
     } catch (error) {
-        res.status(500).json({ message: "Lỗi server", error });
+        console.error(`Lỗi lấy chấm công của NV ${maNV}:`, error);
+        res.status(500).json({ message: "Lỗi server", error: error.message });
     }
 };
 
@@ -81,11 +85,17 @@ export const addChamCong = async (req, res) => {
     }
 
     try {
-        await createChamCong(MaNV, CheckIn, CheckOut || null);
+        // Ép kiểu chuỗi ISO từ React thành đối tượng Date để thư viện mysql2 tự động xử lý
+        const parsedCheckIn = new Date(CheckIn);
+        const parsedCheckOut = CheckOut ? new Date(CheckOut) : null;
+
+        await createChamCong(MaNV, parsedCheckIn, parsedCheckOut);
+        
         // Lưu ý: Lúc này Trigger trong DB đã chạy ngầm và tạo/cập nhật bảng lương luôn rồi
         res.status(201).json({ message: "Chấm công thành công." });
     } catch (error) {
-        res.status(500).json({ message: "Lỗi server", error });
+        console.error("Lỗi thêm chấm công:", error); // In lỗi ra Terminal để debug
+        res.status(500).json({ message: "Lỗi server", error: error.message });
     }
 };
 
@@ -114,10 +124,15 @@ export const editChamCong = async (req, res) => {
             return res.status(404).json({ message: "Bản ghi chấm công không tồn tại." });
         }
 
-        await updateChamCong(id, CheckIn, CheckOut || null);
+        // Tương tự, ép kiểu dữ liệu trước khi gửi vào database
+        const parsedCheckIn = new Date(CheckIn);
+        const parsedCheckOut = CheckOut ? new Date(CheckOut) : null;
+
+        await updateChamCong(id, parsedCheckIn, parsedCheckOut);
         res.json({ message: "Cập nhật bản ghi chấm công thành công." });
     } catch (error) {
-        res.status(500).json({ message: "Lỗi server", error });
+        console.error(`Lỗi cập nhật chấm công ID ${id}:`, error);
+        res.status(500).json({ message: "Lỗi server", error: error.message });
     }
 };
 
@@ -137,6 +152,7 @@ export const removeChamCong = async (req, res) => {
         await deleteChamCong(id);
         res.json({ message: "Xóa bản ghi chấm công thành công." });
     } catch (error) {
-        res.status(500).json({ message: "Lỗi server", error });
+        console.error(`Lỗi xóa chấm công ID ${id}:`, error);
+        res.status(500).json({ message: "Lỗi server", error: error.message });
     }
 };
