@@ -185,7 +185,7 @@ function CaiDat() {
         {/*  Sidebar tabs  */}
         <div className="lg:w-56 shrink-0">
           <nav className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden p-2 flex lg:flex-col gap-1">
-            {TABS.map(({ id, label }) => (
+            {TABS.map(({ id, label, icon: IconComp }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
