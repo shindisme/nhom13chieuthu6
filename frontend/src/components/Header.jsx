@@ -17,7 +17,7 @@ const Header = ({ title }) => {
   };
 
   return (
-    <div className="sticky top-0 left-0 right-0 z-30 bg-transparent border-b border-slate-100">
+    <div className="sticky top-0 left-0 right-0 z-30 bg-amber-50 text-black border-b border-gray-800">
       <div className="max-w-7xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between h-12">
           <div>
@@ -37,7 +37,7 @@ const Header = ({ title }) => {
             </button>
 
             {open && (
-              <div className="absolute right-0 mt-2 bg-white border rounded shadow w-44 z-50">
+              <div className="absolute right-0 mt-2 bg-amber-50 text-black border rounded shadow w-44 z-50">
                 <button
                   onClick={() => {
                     setOpen(false);
@@ -47,7 +47,6 @@ const Header = ({ title }) => {
                 >
                   Thông tin tài khoản
                 </button>
-                <hr />
 
                 <button
                   onClick={handleLogout}
