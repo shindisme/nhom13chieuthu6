@@ -25,12 +25,7 @@ export const login = async (req, res) => {
     const cleanEmail = email.trim();
     try {
         const connection = await db;
-        const query = `
-            SELECT tk.*, tr.MaRole 
-            FROM taikhoan tk 
-            LEFT JOIN taikhoan_role tr ON tk.MaTK = tr.MaTK 
-            WHERE tk.Email = ?
-        `;
+        const query = `SELECT * FROM taikhoan WHERE Email = ?`;
 
         const [rows] = await connection.execute(query, [cleanEmail]);
 
@@ -53,7 +48,7 @@ export const login = async (req, res) => {
         }
 
         const token = jwt.sign(
-            { id: user.MaTK, roleId: user.MaRole, email: user.Email },
+            { id: user.MaTK, roleId: user.role, email: user.Email },
             process.env.JWT_SECRET || "nhom13chieuthu6",
             { expiresIn: "24h" },
         );
@@ -62,7 +57,7 @@ export const login = async (req, res) => {
             success: true,
             message: "Đăng nhập thành công.",
             token,
-            roleId: user.MaRole,
+            roleId: user.role,
             user: {
                 id: user.MaTK,
                 email: user.Email,
