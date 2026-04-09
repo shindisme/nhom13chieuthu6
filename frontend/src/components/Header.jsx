@@ -17,11 +17,11 @@ const Header = ({ title }) => {
   };
 
   return (
-    <div className="sticky top-0 left-0 right-0 z-30 bg-amber-50 text-black border-b border-gray-800">
+    <div className="sticky top-0 left-0 right-0 z-30 bg-white text-black border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between h-12">
           <div>
-            <h1 className="text-lg md:text-2xl font-semibold">{title}</h1>
+            <h1 className="text-lg md:text-2xl font-semibold text-slate-800">{title}</h1>
           </div>
 
           <div className="relative">
@@ -37,20 +37,20 @@ const Header = ({ title }) => {
             </button>
 
             {open && (
-              <div className="absolute right-0 mt-2 bg-amber-50 text-black border rounded shadow w-44 z-50">
+              <div className="absolute right-0 mt-2 bg-white text-slate-800 border border-slate-200 rounded-lg shadow-lg w-44 z-50">
                 <button
                   onClick={() => {
                     setOpen(false);
                     toast.info("Thông tin tài khoản chưa có chức năng");
                   }}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-50"
+                  className="w-full text-left px-4 py-2 hover:bg-slate-50 text-sm text-slate-700"
                 >
                   Thông tin tài khoản
                 </button>
 
                 <button
                   onClick={handleLogout}
-                  className="w-full text-left px-4 py-2 bg-red-50 hover:bg-red-300 text-red-600"
+                  className="w-full text-left px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-sm"
                 >
                   Đăng xuất
                 </button>

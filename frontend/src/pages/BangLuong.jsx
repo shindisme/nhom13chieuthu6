@@ -1,8 +1,7 @@
 function BangLuong() {
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold text-slate-800">Bảng Lương</h1>
-      <p className="text-slate-600 mt-2"></p>
+    <div className="p-4 md:p-6">
+      <p className="text-slate-500 mt-2">.</p>
     </div>
   );
 }

@@ -1,17 +1,9 @@
 import { Sidebar, Menu, MenuItem } from "react-pro-sidebar";
 import { Link, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
-
 function SideBar() {
   const location = useLocation();
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, []);
+  const userData = localStorage.getItem("user");
+  const user = userData ? JSON.parse(userData) : null;
 
   const menuItemStyles = {
     button: ({ active }) => ({
@@ -30,28 +22,26 @@ function SideBar() {
   };
 
   return (
-    <div className="h-screen flex flex-col">
+    <aside className="sticky top-0 h-screen shrink-0">
       <Sidebar
         backgroundColor="#0d1c42"
         style={{
-          height: "100vh",
+          height: "100%",
           display: "flex",
-          position: "relative",
           flexDirection: "column",
+          borderRight: "none",
         }}
-        className="flex flex-col"
       >
-        {/* Logo */}
+        {/* logo */}
         <div className="p-6 text-center border-b border-slate-700">
           <h1 className="text-sm font-bold text-slate-300 uppercase tracking-wider">
             Quản Lý Nhân Sự
           </h1>
         </div>
 
-        {/* Menu Items */}
+        {/* menu */}
         <div className="flex-1 overflow-y-auto">
           <Menu menuItemStyles={menuItemStyles}>
-            {/* TỔNG QUAN */}
             <div className="px-4 py-3 mt-2">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                 Tổng Quan
@@ -64,7 +54,6 @@ function SideBar() {
               <span>Dashboard</span>
             </MenuItem>
 
-            {/* NHÂN SỰ */}
             <div className="px-4 py-3 mt-4">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                 Nhân Sự
@@ -89,7 +78,6 @@ function SideBar() {
               <span>Bảng lương</span>
             </MenuItem>
 
-            {/* TIỆN ÍCH */}
             <div className="px-4 py-3 mt-4">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                 Tiện Ích
@@ -110,11 +98,11 @@ function SideBar() {
           </Menu>
         </div>
 
-        {/* User Info */}
+        {/* user info - cố định ở cuối sidebar */}
         {user && (
           <div
-            className="border-t border-slate-700 p-4 bg-slate-900/40"
-            style={{ position: "absolute", bottom: 0, left: 0, width: "100%" }}
+            className="border-t border-slate-700 p-4 shrink-0"
+            style={{ backgroundColor: "#0a1533" }}
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
@@ -132,7 +120,7 @@ function SideBar() {
           </div>
         )}
       </Sidebar>
-    </div>
+    </aside>
   );
 }
 

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import useFetch from "../hooks/useFetch";
 import chamCongService from "../services/chamcongService";
 import { toast } from "react-toastify";
@@ -98,7 +98,7 @@ function Modal({ mode, record, employees, onClose, onSaved }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
         {/* header */}
-        <div className="bg-gradient-to-r from-[#0d1c42] to-[#1e40af] px-6 py-4 flex items-center justify-between">
+        <div className="bg-linear-to-r from-[#0d1c42] to-[#1e40af] px-6 py-4 flex items-center justify-between">
           <h2 className="text-white font-semibold text-base">
             {isEdit ? "Chỉnh sửa chấm công" : "Thêm chấm công mới"}
           </h2>
@@ -273,15 +273,15 @@ function ChamCong() {
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
 
-  const handleSaved = useCallback(() => {
+  const handleSaved = () => {
     setModal(null);
     refetch();
-  }, [refetch]);
+  };
 
-  const handleDeleted = useCallback(() => {
+  const handleDeleted = () => {
     setDeleteTarget(null);
     refetch();
-  }, [refetch]);
+  };
 
   /* Filter */
   const filtered = (Array.isArray(records) ? records : []).filter((r) => {

@@ -17,20 +17,18 @@ function Layout() {
   const title = routeTitleMap[pathname] || "";
 
   return (
-    <>
-      <div className="flex min-h-screen bg-gray-100">
-        <SideBar />
-        <main className="flex-1 overflow-auto">
-          {title && <Header title={title} />}
+    <div className="flex min-h-screen bg-slate-100 text-slate-800">
+      <SideBar />
+      <main className="flex-1 overflow-auto">
+        {title && <Header title={title} />}
 
-          <div className="p-6">
-            <div className="max-w-7xl mx-auto px-4">
-              <Outlet />
-            </div>
+        <div className="p-4 md:p-6">
+          <div className="max-w-7xl mx-auto px-2 md:px-4">
+            <Outlet />
           </div>
-        </main>
-      </div>
-    </>
+        </div>
+      </main>
+    </div>
   );
 }
 

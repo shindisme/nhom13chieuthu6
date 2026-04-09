@@ -1,9 +1,9 @@
 function Dashboard() {
-    return (
-        <div>
-            <div className="mt-4 text-gray-500">Trang quản lý nhân sự.</div>
-        </div>
-    );
+  return (
+    <div>
+      <p className="mt-4 text-slate-500">Trang quản lý nhân sự.</p>
+    </div>
+  );
 }
 
 export default Dashboard;

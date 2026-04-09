@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import authService from "../services/authService";
 
-/* ─── Icon helpers ─────────────────────────────────────────── */
+/*  Icons   */
 const Icon = {
   User: () => (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -41,26 +41,24 @@ const Icon = {
   ),
 };
 
-/* ─── Toggle Switch ─────────────────────────────────────────── */
+/*  Toggle Switch  */
 function Toggle({ checked, onChange }) {
   return (
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none ${
-        checked ? "bg-[#1e40af]" : "bg-slate-200"
-      }`}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none ${checked ? "bg-[#1e40af]" : "bg-slate-200"
+        }`}
     >
       <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${
-          checked ? "translate-x-6" : "translate-x-1"
-        }`}
+        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${checked ? "translate-x-6" : "translate-x-1"
+          }`}
       />
     </button>
   );
 }
 
-/* ─── Section wrapper ───────────────────────────────────────── */
+/*  Section wrapper  */
 function Section({ title, description, children }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
@@ -73,7 +71,7 @@ function Section({ title, description, children }) {
   );
 }
 
-/* ─── Field ─────────────────────────────────────────────────── */
+/*  Field  */
 function Field({ label, hint, children }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-6">
@@ -89,7 +87,7 @@ function Field({ label, hint, children }) {
 const inputCls =
   "w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500 transition";
 
-/* ─── Tabs ──────────────────────────────────────────────────── */
+/*  Tabs  */
 const TABS = [
   { id: "profile", label: "Tài khoản", icon: Icon.User },
   { id: "security", label: "Bảo mật", icon: Icon.Lock },
@@ -97,14 +95,12 @@ const TABS = [
   { id: "system", label: "Hệ thống", icon: Icon.Database },
 ];
 
-/* ═══════════════════════════════════════════════════════════════
-   MAIN COMPONENT
-═══════════════════════════════════════════════════════════════ */
+
 function CaiDat() {
   const user = authService.getCurrentUser();
   const [activeTab, setActiveTab] = useState("profile");
 
-  /* ── Profile state ── */
+  // state tai khoan
   const [profile, setProfile] = useState({
     name: user?.name || "",
     email: user?.email || "",
@@ -112,7 +108,7 @@ function CaiDat() {
     position: "HR Manager",
   });
 
-  /* ── Password state ── */
+  // state mat khau
   const [passwords, setPasswords] = useState({
     current: "",
     newPass: "",
@@ -120,7 +116,7 @@ function CaiDat() {
   });
   const [showPw, setShowPw] = useState({ current: false, newPass: false, confirm: false });
 
-  /* ── Notification state ── */
+  // state thong bao
   const [notifs, setNotifs] = useState({
     emailLogin: true,
     emailPayroll: true,
@@ -130,7 +126,7 @@ function CaiDat() {
     monthlyReport: false,
   });
 
-  /* ── System state ── */
+  // state he thong
   const [sysSettings, setSysSettings] = useState({
     workStart: "08:00",
     workEnd: "17:30",
@@ -141,7 +137,7 @@ function CaiDat() {
     currency: "VND",
   });
 
-  /* ── Handlers ── */
+  /*  handlers  */
   const handleProfileSave = (e) => {
     e.preventDefault();
     toast.success("Cập nhật thông tin tài khoản thành công!");
@@ -168,12 +164,12 @@ function CaiDat() {
         : [...prev.workDays, d],
     }));
 
-  /* ─────────────────────────────── render ─── */
+  /*  render  */
   return (
     <div className="flex flex-col gap-6">
       {/* Page intro */}
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#0d1c42] to-[#1e40af] flex items-center justify-center text-white">
+        <div className="w-12 h-12 rounded-xl bg-linear-to-br from-[#0d1c42] to-[#1e40af] flex items-center justify-center text-white">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
               d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -186,18 +182,17 @@ function CaiDat() {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* ── Sidebar tabs ── */}
+        {/*  Sidebar tabs  */}
         <div className="lg:w-56 shrink-0">
           <nav className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden p-2 flex lg:flex-col gap-1">
             {TABS.map(({ id, label, icon: IconComp }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition w-full text-left ${
-                  activeTab === id
-                    ? "bg-[#0d1c42] text-white"
-                    : "text-slate-600 hover:bg-slate-50"
-                }`}
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition w-full text-left ${activeTab === id
+                  ? "bg-[#0d1c42] text-white"
+                  : "text-slate-600 hover:bg-slate-50"
+                  }`}
               >
                 <span className={activeTab === id ? "text-white" : "text-slate-400"}>
                   <IconComp />
@@ -208,17 +203,15 @@ function CaiDat() {
           </nav>
         </div>
 
-        {/* ── Content area ── */}
         <div className="flex-1 flex flex-col gap-5">
 
-          {/* ══ PROFILE TAB ══ */}
           {activeTab === "profile" && (
             <>
               {/* Avatar card */}
               <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
                   <div className="relative shrink-0">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+                    <div className="w-20 h-20 rounded-full bg-linear-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
                       {(profile.name || "U").charAt(0).toUpperCase()}
                     </div>
                     <span className="absolute bottom-0 right-0 w-5 h-5 bg-emerald-400 rounded-full border-2 border-white" />
@@ -289,7 +282,7 @@ function CaiDat() {
             </>
           )}
 
-          {/* ══ SECURITY TAB ══ */}
+          {/* tab bao mat */}
           {activeTab === "security" && (
             <>
               <Section title="Đổi mật khẩu" description="Mật khẩu mới phải có ít nhất 6 ký tự">
@@ -393,7 +386,7 @@ function CaiDat() {
             </>
           )}
 
-          {/* ══ NOTIFICATIONS TAB ══ */}
+          {/*  tab thông báo  */}
           {activeTab === "notifications" && (
             <Section title="Cài đặt thông báo" description="Chọn loại thông báo bạn muốn nhận">
               <div className="flex flex-col gap-1">
@@ -456,7 +449,7 @@ function CaiDat() {
             </Section>
           )}
 
-          {/* ══ SYSTEM TAB ══ */}
+          {/* tab he thong */}
           {activeTab === "system" && (
             <>
               <Section title="Giờ làm việc" description="Cấu hình thời gian làm việc mặc định của công ty">
@@ -499,11 +492,10 @@ function CaiDat() {
                             key={key}
                             type="button"
                             onClick={() => toggleDay(key)}
-                            className={`w-10 h-10 rounded-lg text-sm font-medium transition border ${
-                              active
-                                ? "bg-[#0d1c42] text-white border-[#0d1c42]"
-                                : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
-                            }`}
+                            className={`w-10 h-10 rounded-lg text-sm font-medium transition border ${active
+                              ? "bg-[#0d1c42] text-white border-[#0d1c42]"
+                              : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
+                              }`}
                           >
                             {label}
                           </button>
