@@ -64,7 +64,6 @@ export const addLuong = async (req, res) => {
     }
 
     try {
-        // Kiểm tra nhân viên đã có cấu hình lương chưa (vì UNIQUE KEY idx_luong_manv)
         const [existing] = await findLuongByMaNV(MaNV);
         if (existing.length > 0) {
             return res.status(409).json({ message: `Nhân viên có mã ${MaNV} đã được cấu hình lương.` });
@@ -85,7 +84,6 @@ export const editLuong = async (req, res) => {
         return res.status(400).json({ message: "ID cấu hình lương không hợp lệ." });
     }
 
-    // Không cho phép sửa MaNV, chỉ cho sửa các số liệu lương
     const errors = [];
     if (LuongCoBan === undefined || isNaN(LuongCoBan) || Number(LuongCoBan) < 0) errors.push("Lương cơ bản không hợp lệ.");
     if (PhuCap === undefined || isNaN(PhuCap) || Number(PhuCap) < 0) errors.push("Phụ cấp không hợp lệ.");
