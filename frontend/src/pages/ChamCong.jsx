@@ -1,53 +1,148 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import useFetch from "../hooks/useFetch";
 import chamCongService from "../services/chamcongService";
 import { toast } from "react-toastify";
 
-/* helpers  */
+/*  Constants  */
+const WORK_START_HOUR = 8;
+const WORK_START_MIN = 0;
+const WORK_END_HOUR = 17;
+const WORK_END_MIN = 30;
+const PAGE_SIZE = 12;
+
+/*  Helpers  */
+const pad = (n) => String(n).padStart(2, "0");
+
 const toLocalInput = (iso) => {
   if (!iso) return "";
   const d = new Date(iso);
-  const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
-const formatDateTime = (iso) => {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
+const fmt = (iso, opts) =>
+  iso
+    ? new Date(iso).toLocaleString("vi-VN", opts)
+    : "—";
 
-const calcDuration = (checkIn, checkOut) => {
+const fmtDate = (iso) =>
+  fmt(iso, { day: "2-digit", month: "2-digit", year: "numeric" });
+
+const fmtTime = (iso) =>
+  fmt(iso, { hour: "2-digit", minute: "2-digit" });
+
+const fmtDateTimeShort = (iso) =>
+  fmt(iso, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+const calcMinutes = (checkIn, checkOut) => {
   if (!checkIn || !checkOut) return null;
-  const diff = (new Date(checkOut) - new Date(checkIn)) / 1000 / 60;
-  if (diff <= 0) return null;
-  const h = Math.floor(diff / 60);
-  const m = Math.floor(diff % 60);
-  return `${h}h ${m}m`;
+  const diff = (new Date(checkOut) - new Date(checkIn)) / 60000;
+  return diff > 0 ? diff : null;
 };
 
-const statusBadge = (checkOut) =>
-  checkOut ? (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-      Hoàn thành
-    </span>
-  ) : (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block animate-pulse" />
-      Đang làm
-    </span>
-  );
+const fmtDuration = (mins) => {
+  if (!mins) return null;
+  const h = Math.floor(mins / 60);
+  const m = Math.floor(mins % 60);
+  return h > 0 ? `${h}g ${m}p` : `${m}p`;
+};
 
-/* Modal */
+const isLate = (checkIn) => {
+  if (!checkIn) return false;
+  const d = new Date(checkIn);
+  return (
+    d.getHours() > WORK_START_HOUR ||
+    (d.getHours() === WORK_START_HOUR && d.getMinutes() > WORK_START_MIN + 5)
+  );
+};
+
+const isEarlyLeave = (checkOut) => {
+  if (!checkOut) return false;
+  const d = new Date(checkOut);
+  return (
+    d.getHours() < WORK_END_HOUR ||
+    (d.getHours() === WORK_END_HOUR && d.getMinutes() < WORK_END_MIN)
+  );
+};
+
+const getDateKey = (iso) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
+/*  Avatar initials  */
+const AVATAR_COLORS = [
+  "bg-violet-100 text-violet-700",
+  "bg-blue-100 text-blue-700",
+  "bg-emerald-100 text-emerald-700",
+  "bg-amber-100 text-amber-700",
+  "bg-rose-100 text-rose-700",
+  "bg-cyan-100 text-cyan-700",
+];
+const avatarColor = (name = "") =>
+  AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length] || AVATAR_COLORS[0];
+
+/*  Status badge  */
+function StatusBadge({ record }) {
+  if (!record.CheckOut)
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse inline-block" />
+        Đang làm
+      </span>
+    );
+
+  const late = isLate(record.CheckIn);
+  const early = isEarlyLeave(record.CheckOut);
+
+  if (!late && !early)
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+        Đúng giờ
+      </span>
+    );
+
+  return (
+    <div className="flex flex-col gap-1">
+      {late && (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-600 border border-orange-200">
+          Đi trễ
+        </span>
+      )}
+      {early && (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-600 border border-red-200">
+          Về sớm
+        </span>
+      )}
+    </div>
+  );
+}
+
+/*  Hours bar  */
+function HoursBar({ checkIn, checkOut }) {
+  const mins = calcMinutes(checkIn, checkOut);
+  if (!mins) return <span className="text-slate-400 text-xs">—</span>;
+  const pct = Math.min(100, (mins / 510) * 100); // 8.5h = 510min standard
+  const color = mins >= 480 ? "bg-emerald-500" : mins >= 420 ? "bg-amber-400" : "bg-red-400";
+  return (
+    <div className="flex items-center gap-2 min-w-[90px]">
+      <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full ${color} transition-all`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className="text-xs font-medium text-slate-600 whitespace-nowrap">
+        {fmtDuration(mins)}
+      </span>
+    </div>
+  );
+}
+
+/*  Modal  */
 function Modal({ mode, record, employees, onClose, onSaved }) {
   const isEdit = mode === "edit";
-
   const [form, setForm] = useState({
     MaNV: record?.MaNV ?? "",
     CheckIn: toLocalInput(record?.CheckIn) ?? "",
@@ -55,10 +150,8 @@ function Modal({ mode, record, employees, onClose, onSaved }) {
   });
   const [saving, setSaving] = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
+  const handleChange = (e) =>
+    setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -66,64 +159,68 @@ function Modal({ mode, record, employees, onClose, onSaved }) {
     if (!form.CheckIn) return toast.warning("Vui lòng nhập giờ vào");
     if (form.CheckOut && new Date(form.CheckOut) <= new Date(form.CheckIn))
       return toast.warning("Giờ ra phải sau giờ vào");
-
     try {
       setSaving(true);
-      const payload = {
-        MaNV: form.MaNV,
-        CheckIn: form.CheckIn ? new Date(form.CheckIn).toISOString() : undefined,
-        CheckOut: form.CheckOut ? new Date(form.CheckOut).toISOString() : null,
-      };
-
+      const toISO = (v) => (v ? new Date(v).toISOString() : null);
       if (isEdit) {
         await chamCongService.update(record.MaChamCong, {
-          CheckIn: payload.CheckIn,
-          CheckOut: payload.CheckOut,
+          CheckIn: toISO(form.CheckIn),
+          CheckOut: toISO(form.CheckOut),
         });
-        toast.success("Cập nhật chấm công thành công");
+        toast.success("Cập nhật thành công");
       } else {
-        await chamCongService.insert(payload);
+        await chamCongService.insert({
+          MaNV: form.MaNV,
+          CheckIn: toISO(form.CheckIn),
+          CheckOut: toISO(form.CheckOut),
+        });
         toast.success("Thêm chấm công thành công");
       }
       onSaved();
     } catch (err) {
-      const msg = err?.response?.data?.message || "Có lỗi xảy ra";
-      toast.error(msg);
+      toast.error(err?.response?.data?.message || "Có lỗi xảy ra");
     } finally {
       setSaving(false);
     }
   };
 
+  const previewMins = calcMinutes(form.CheckIn, form.CheckOut);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
-        {/* header */}
-        <div className="bg-gradient-to-r from-[#0d1c42] to-[#1e40af] px-6 py-4 flex items-center justify-between">
-          <h2 className="text-white font-semibold text-base">
-            {isEdit ? "Chỉnh sửa chấm công" : "Thêm chấm công mới"}
-          </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <div>
+            <h2 className="font-bold text-slate-800 text-base">
+              {isEdit ? "Chỉnh sửa chấm công" : "Thêm bản ghi chấm công"}
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {isEdit ? `Mã CC: #${record.MaChamCong}` : "Nhập thông tin chấm công mới"}
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className="text-white/70 hover:text-white text-xl leading-none"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
           >
-            ×
+            ✕
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
           {/* Nhân viên */}
-          {!isEdit && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-slate-700">
+          {!isEdit ? (
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
                 Nhân viên <span className="text-red-500">*</span>
               </label>
               <select
                 name="MaNV"
                 value={form.MaNV}
                 onChange={handleChange}
-                className="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition"
               >
-                <option value="">-- Chọn nhân viên --</option>
+                <option value="">— Chọn nhân viên —</option>
                 {employees.map((nv) => (
                   <option key={nv.MaNV} value={nv.MaNV}>
                     {nv.HoTen}
@@ -131,52 +228,96 @@ function Modal({ mode, record, employees, onClose, onSaved }) {
                 ))}
               </select>
             </div>
-          )}
-          {isEdit && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-slate-700">Nhân viên</label>
-              <div className="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-100 text-slate-600">
-                {record.HoTen}
+          ) : (
+            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+              <div
+                className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${avatarColor(record.HoTen)}`}
+              >
+                {record.HoTen?.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-700">{record.HoTen}</p>
+                <p className="text-xs text-slate-400">Mã NV: #{record.MaNV}</p>
               </div>
             </div>
           )}
 
-          {/* Giờ vào */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-slate-700">
-              Giờ vào (Check-in) <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="datetime-local"
-              name="CheckIn"
-              value={form.CheckIn}
-              onChange={handleChange}
-              className="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-            />
+          {/* Time inputs */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                Giờ vào (Check-in) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="datetime-local"
+                name="CheckIn"
+                value={form.CheckIn}
+                onChange={handleChange}
+                className="w-full border border-slate-200 rounded-xl px-3 py-3 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                Giờ ra (Check-out)
+              </label>
+              <input
+                type="datetime-local"
+                name="CheckOut"
+                value={form.CheckOut}
+                onChange={handleChange}
+                className="w-full border border-slate-200 rounded-xl px-3 py-3 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition"
+              />
+            </div>
           </div>
 
-          {/* Giờ ra */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-slate-700">
-              Giờ ra (Check-out)
-              <span className="text-slate-400 font-normal ml-1">(tuỳ chọn)</span>
-            </label>
-            <input
-              type="datetime-local"
-              name="CheckOut"
-              value={form.CheckOut}
-              onChange={handleChange}
-              className="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-            />
-          </div>
-
-          {/* Preview thời gian */}
-          {form.CheckIn && form.CheckOut && (
-            <div className="bg-blue-50 rounded-lg px-4 py-3 text-sm text-blue-700 flex items-center gap-2">
-              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Thời gian làm việc: <strong>{calcDuration(form.CheckIn, form.CheckOut) || "—"}</strong>
+          {/* Preview */}
+          {form.CheckIn && (
+            <div className="grid grid-cols-3 gap-3 text-center">
+              {[
+                {
+                  label: "Giờ vào",
+                  val: fmtTime(form.CheckIn ? new Date(form.CheckIn).toISOString() : null),
+                  sub: isLate(form.CheckIn) ? "⚠ Trễ" : "✓ Đúng giờ",
+                  color: isLate(form.CheckIn) ? "text-orange-500" : "text-emerald-600",
+                },
+                {
+                  label: "Giờ ra",
+                  val: form.CheckOut ? fmtTime(new Date(form.CheckOut).toISOString()) : "—",
+                  sub: form.CheckOut
+                    ? isEarlyLeave(form.CheckOut)
+                      ? "↙ Về sớm"
+                      : "✓ Đủ giờ"
+                    : "Chưa nhập",
+                  color:
+                    form.CheckOut && isEarlyLeave(form.CheckOut)
+                      ? "text-red-500"
+                      : "text-emerald-600",
+                },
+                {
+                  label: "Giờ công",
+                  val: previewMins ? fmtDuration(previewMins) : "—",
+                  sub:
+                    previewMins >= 480
+                      ? "✓ Đủ công"
+                      : previewMins
+                        ? "Thiếu giờ"
+                        : "",
+                  color: previewMins >= 480 ? "text-emerald-600" : "text-amber-500",
+                },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="bg-slate-50 rounded-xl p-3 border border-slate-100"
+                >
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wide font-medium">
+                    {item.label}
+                  </p>
+                  <p className="text-lg font-bold text-slate-800 mt-1">{item.val}</p>
+                  <p className={`text-[10px] font-medium mt-0.5 ${item.color}`}>
+                    {item.sub}
+                  </p>
+                </div>
+              ))}
             </div>
           )}
 
@@ -184,16 +325,16 @@ function Modal({ mode, record, employees, onClose, onSaved }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 border border-slate-200 rounded-lg py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition"
+              className="flex-1 border border-slate-200 rounded-xl py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 bg-[#0d1c42] hover:bg-[#1e40af] text-white rounded-lg py-2.5 text-sm font-medium transition disabled:opacity-50"
+              className="flex-1 bg-[#0d1c42] hover:bg-[#1e40af] text-white rounded-xl py-3 text-sm font-semibold transition disabled:opacity-50"
             >
-              {saving ? "Đang lưu..." : isEdit ? "Cập nhật" : "Thêm mới"}
+              {saving ? "Đang lưu…" : isEdit ? "Cập nhật" : "Thêm mới"}
             </button>
           </div>
         </form>
@@ -202,53 +343,47 @@ function Modal({ mode, record, employees, onClose, onSaved }) {
   );
 }
 
-/* Delete Confirm */
+/*  Delete confirm  */
 function DeleteConfirm({ record, onClose, onDeleted }) {
   const [loading, setLoading] = useState(false);
-
   const handleDelete = async () => {
     try {
       setLoading(true);
       await chamCongService.delete(record.MaChamCong);
-      toast.success("Đã xóa bản ghi chấm công");
+      toast.success("Đã xóa bản ghi");
       onDeleted();
     } catch (err) {
-      const msg = err?.response?.data?.message || "Xóa thất bại";
-      toast.error(msg);
+      toast.error(err?.response?.data?.message || "Xóa thất bại");
     } finally {
       setLoading(false);
     }
   };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 flex flex-col gap-4">
-        <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto">
-          <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4 border border-red-100">
+          <svg className="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
         </div>
-        <div className="text-center">
-          <h3 className="font-semibold text-slate-800">Xác nhận xóa</h3>
-          <p className="text-sm text-slate-500 mt-1">
-            Xóa bản ghi chấm công của <strong>{record.HoTen}</strong>?
-            <br />
-            Hành động này không thể hoàn tác.
-          </p>
-        </div>
-        <div className="flex gap-3">
+        <h3 className="font-bold text-slate-800 text-base">Xóa bản ghi chấm công?</h3>
+        <p className="text-sm text-slate-500 mt-2">
+          Bản ghi của <span className="font-semibold text-slate-700">{record.HoTen}</span> ngày{" "}
+          <span className="font-semibold text-slate-700">{fmtDate(record.CheckIn)}</span> sẽ bị xóa vĩnh viễn.
+        </p>
+        <div className="flex gap-3 mt-5">
           <button
             onClick={onClose}
-            className="flex-1 border border-slate-200 rounded-lg py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition"
+            className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
           >
             Hủy
           </button>
           <button
             onClick={handleDelete}
             disabled={loading}
-            className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-lg py-2.5 text-sm font-medium transition disabled:opacity-50"
+            className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-xl py-2.5 text-sm font-semibold transition disabled:opacity-50"
           >
-            {loading ? "Đang xóa..." : "Xóa"}
+            {loading ? "Đang xóa…" : "Xóa"}
           </button>
         </div>
       </div>
@@ -256,199 +391,396 @@ function DeleteConfirm({ record, onClose, onDeleted }) {
   );
 }
 
-/*Main Page */
+/*  Stat card  */
+function StatCard({ label, value, sub, icon, color }) {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm px-5 py-4 flex items-center gap-4">
+      <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg ${color}`}>
+        {icon}
+      </div>
+      <div>
+        <p className="text-2xl font-bold text-slate-800 leading-none">{value}</p>
+        <p className="text-xs text-slate-500 mt-1">{label}</p>
+        {sub && <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+/*  Main Page  */
 function ChamCong() {
   const { data: records = [], loading, error, refetch } = useFetch("/cham-cong");
   const { data: employeeRes } = useFetch("/nhan-vien");
 
-  // employeeRes có thể là { data: [...] } hoặc trực tiếp là array
   const employees = Array.isArray(employeeRes)
     ? employeeRes
     : employeeRes?.data ?? [];
 
-  const [modal, setModal] = useState(null); // null | { mode: 'add' | 'edit', record?: {} }
+  const [modal, setModal] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all"); // all | done | working
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterDate, setFilterDate] = useState(""); // YYYY-MM-DD
+  const [filterMonth, setFilterMonth] = useState(""); // YYYY-MM
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 10;
 
-  const handleSaved = useCallback(() => {
-    setModal(null);
-    refetch();
-  }, [refetch]);
+  const handleSaved = useCallback(() => { setModal(null); refetch(); }, [refetch]);
+  const handleDeleted = useCallback(() => { setDeleteTarget(null); refetch(); }, [refetch]);
 
-  const handleDeleted = useCallback(() => {
-    setDeleteTarget(null);
-    refetch();
-  }, [refetch]);
+  const allRecords = Array.isArray(records) ? records : [];
 
-  /* Filter */
-  const filtered = (Array.isArray(records) ? records : []).filter((r) => {
-    const matchSearch = r.HoTen?.toLowerCase().includes(search.toLowerCase());
-    const matchStatus =
-      filterStatus === "all"
-        ? true
-        : filterStatus === "done"
-          ? !!r.CheckOut
-          : !r.CheckOut;
-    return matchSearch && matchStatus;
-  });
+  /*  Filter  */
+  const filtered = useMemo(() => {
+    return allRecords.filter((r) => {
+      const matchSearch =
+        !search || r.HoTen?.toLowerCase().includes(search.toLowerCase());
+      const matchStatus =
+        filterStatus === "all"
+          ? true
+          : filterStatus === "done"
+            ? !!r.CheckOut
+            : filterStatus === "working"
+              ? !r.CheckOut
+              : filterStatus === "late"
+                ? isLate(r.CheckIn)
+                : filterStatus === "early"
+                  ? r.CheckOut && isEarlyLeave(r.CheckOut)
+                  : true;
+      const matchDate = filterDate
+        ? getDateKey(r.CheckIn) === filterDate
+        : true;
+      const matchMonth = filterMonth
+        ? r.CheckIn?.startsWith(filterMonth)
+        : true;
+      return matchSearch && matchStatus && matchDate && matchMonth;
+    });
+  }, [allRecords, search, filterStatus, filterDate, filterMonth]);
 
+  /*  Stats  */
+  const stats = useMemo(() => {
+    const total = allRecords.length;
+    const done = allRecords.filter((r) => r.CheckOut).length;
+    const working = total - done;
+    const late = allRecords.filter((r) => isLate(r.CheckIn)).length;
+    const earlyLeave = allRecords.filter((r) => r.CheckOut && isEarlyLeave(r.CheckOut)).length;
+
+    const totalMins = allRecords
+      .map((r) => calcMinutes(r.CheckIn, r.CheckOut) || 0)
+      .reduce((a, b) => a + b, 0);
+    const avgHours = done > 0 ? (totalMins / done / 60).toFixed(1) : "0";
+
+    return { total, done, working, late, earlyLeave, avgHours };
+  }, [allRecords]);
+
+  /*  Pagination  */
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  /* Stats */
-  const total = (Array.isArray(records) ? records : []).length;
-  const done = (Array.isArray(records) ? records : []).filter((r) => r.CheckOut).length;
-  const working = total - done;
-
   if (loading)
     return (
-      <div className="flex items-center justify-center py-24 text-slate-400">
-        <svg className="w-6 h-6 animate-spin mr-2" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-        </svg>
-        Đang tải...
+      <div className="flex items-center justify-center py-32">
+        <div className="flex flex-col items-center gap-3 text-slate-400">
+          <svg className="w-8 h-8 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+          </svg>
+          <span className="text-sm">Đang tải dữ liệu chấm công…</span>
+        </div>
       </div>
     );
 
   if (error)
     return (
-      <div className="p-6 text-center text-red-500">
-        Lỗi tải dữ liệu: {error.message}
+      <div className="flex items-center justify-center py-24">
+        <div className="text-center text-red-500">
+          <p className="font-semibold">Không thể tải dữ liệu</p>
+          <p className="text-sm text-slate-500 mt-1">{error.message}</p>
+        </div>
       </div>
     );
 
   return (
-    <div className="flex flex-col gap-6">
-      {/*Stats*/}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          { label: "Tổng bản ghi", value: total, color: "bg-blue-50 text-blue-700 border-blue-100" },
-          { label: "Hoàn thành", value: done, color: "bg-emerald-50 text-emerald-700 border-emerald-100" },
-          { label: "Đang làm việc", value: working, color: "bg-amber-50 text-amber-700 border-amber-100" },
-        ].map((s) => (
-          <div
-            key={s.label}
-            className={`rounded-xl border px-5 py-4 flex items-center justify-between ${s.color}`}
-          >
-            <span className="text-sm font-medium">{s.label}</span>
-            <span className="text-2xl font-bold">{s.value}</span>
-          </div>
-        ))}
+    <div className="flex flex-col gap-5">
+
+      {/*  Stats row  */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <StatCard
+          label="Tổng bản ghi"
+          value={stats.total}
+          sub="toàn hệ thống"
+          
+          color="bg-slate-100"
+        />
+        <StatCard
+          label="Hoàn thành"
+          value={stats.done}
+          sub={`${stats.done > 0 ? ((stats.done / stats.total) * 100).toFixed(0) : 0}% tổng số`}
+          
+          color="bg-emerald-50"
+        />
+        <StatCard
+          label="Đang làm việc"
+          value={stats.working}
+          sub="chưa check-out"
+          
+          color="bg-amber-50"
+        />
+        <StatCard
+          label="Đi trễ"
+          value={stats.late}
+          sub="lượt trong tháng"
+          
+          color="bg-orange-50"
+        />
+        <StatCard
+          label="Giờ công TB"
+          value={`${stats.avgHours}g`}
+          sub="trên mỗi ca làm"
+          
+          color="bg-blue-50"
+        />
       </div>
 
-      {/*Table card */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        {/* toolbar */}
-        <div className="px-6 py-4 border-b border-slate-100 flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
-          <div className="flex gap-2 flex-wrap">
-            {[
-              { key: "all", label: "Tất cả" },
-              { key: "done", label: "Hoàn thành" },
-              { key: "working", label: "Đang làm" },
-            ].map((f) => (
-              <button
-                key={f.key}
-                onClick={() => { setFilterStatus(f.key); setPage(1); }}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${filterStatus === f.key
-                  ? "bg-[#0d1c42] text-white"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
+      {/* ── Table card ── */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
 
-          <div className="flex gap-3 w-full md:w-auto">
-            <input
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Tìm theo tên nhân viên..."
-              className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 w-full md:w-56"
-            />
-            <button
-              onClick={() => setModal({ mode: "add" })}
-              className="px-4 py-2 bg-[#0d1c42] hover:bg-[#1e40af] text-white rounded-lg text-sm font-medium transition whitespace-nowrap flex items-center gap-1.5"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Thêm mới
-            </button>
+        {/* Toolbar */}
+        <div className="px-5 py-4 border-b border-slate-100">
+          <div className="flex flex-col md:flex-row gap-3">
+            {/* Left: search + date filters */}
+            <div className="flex flex-wrap gap-2 flex-1">
+              <div className="relative">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                  placeholder="Tìm nhân viên…"
+                  className="pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 w-48 transition"
+                />
+              </div>
+
+              <input
+                type="date"
+                value={filterDate}
+                onChange={(e) => { setFilterDate(e.target.value); setFilterMonth(""); setPage(1); }}
+                className="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition"
+                title="Lọc theo ngày"
+              />
+
+              <input
+                type="month"
+                value={filterMonth}
+                onChange={(e) => { setFilterMonth(e.target.value); setFilterDate(""); setPage(1); }}
+                className="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition"
+                title="Lọc theo tháng"
+              />
+
+              {(filterDate || filterMonth || search) && (
+                <button
+                  onClick={() => { setSearch(""); setFilterDate(""); setFilterMonth(""); setPage(1); }}
+                  className="px-3 py-2 rounded-xl text-xs font-medium text-slate-500 bg-slate-100 hover:bg-slate-200 transition flex items-center gap-1"
+                >
+                  ✕ Xóa lọc
+                </button>
+              )}
+            </div>
+
+            {/* Right: status tabs + add button */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex bg-slate-100 rounded-xl p-0.5 gap-0.5">
+                {[
+                  { key: "all", label: "Tất cả" },
+                  { key: "done", label: "Hoàn thành" },
+                  { key: "working", label: "Đang làm" },
+                  { key: "late", label: "Đi trễ" },
+                ].map((f) => (
+                  <button
+                    key={f.key}
+                    onClick={() => { setFilterStatus(f.key); setPage(1); }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${filterStatus === f.key
+                        ? "bg-white text-slate-800 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
+                      }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setModal({ mode: "add" })}
+                className="px-4 py-2 bg-[#0d1c42] hover:bg-[#1e40af] text-white rounded-xl text-sm font-semibold transition flex items-center gap-2 whitespace-nowrap"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                </svg>
+                Thêm mới
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* table */}
+        {/* Result summary */}
+        {(filterDate || filterMonth || search || filterStatus !== "all") && (
+          <div className="px-5 py-2.5 bg-blue-50/60 border-b border-blue-100 text-xs text-blue-700 font-medium flex items-center gap-2">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
+            </svg>
+            Đang lọc — hiển thị {filtered.length} trong {allRecords.length} bản ghi
+          </div>
+        )}
+
+        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                {["STT", "Nhân viên", "Giờ vào", "Giờ ra", "Thời gian làm", "Trạng thái", "Thao tác"].map(
-                  (h) => (
-                    <th
-                      key={h}
-                      className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap"
-                    >
-                      {h}
-                    </th>
-                  )
-                )}
+              <tr className="border-b border-slate-100">
+                <th className="px-5 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider w-10">STT</th>
+                <th className="px-5 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Nhân viên</th>
+                <th className="px-5 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Ngày</th>
+                <th className="px-5 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Check-in</th>
+                <th className="px-5 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Check-out</th>
+                <th className="px-5 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Giờ công</th>
+                <th className="px-5 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Trạng thái</th>
+                <th className="px-5 py-3 text-right text-xs font-bold text-slate-400 uppercase tracking-wider">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-slate-400 text-sm">
-                    Không có bản ghi nào
+                  <td colSpan={8} className="px-5 py-16 text-center">
+                    <div className="flex flex-col items-center gap-3 text-slate-400">
+                      <svg className="w-10 h-10 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      <p className="text-sm font-medium">Không có dữ liệu chấm công</p>
+                      <p className="text-xs">Thử thay đổi bộ lọc hoặc thêm bản ghi mới</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 paginated.map((r, idx) => (
-                  <tr key={r.MaChamCong} className="hover:bg-slate-50/60 transition">
-                    <td className="px-4 py-3 text-slate-400 text-xs">
+                  <tr
+                    key={r.MaChamCong}
+                    className="hover:bg-slate-50/70 transition-colors group"
+                  >
+                    {/* STT */}
+                    <td className="px-5 py-3.5 text-xs text-slate-400 font-medium">
                       {(page - 1) * PAGE_SIZE + idx + 1}
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold shrink-0">
+
+                    {/* Nhân viên */}
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${avatarColor(r.HoTen)}`}
+                        >
                           {r.HoTen?.charAt(0).toUpperCase()}
                         </div>
-                        <span className="font-medium text-slate-800">{r.HoTen}</span>
+                        <div>
+                          <p className="font-semibold text-slate-800 text-sm leading-none">
+                            {r.HoTen}
+                          </p>
+                          <p className="text-[11px] text-slate-400 mt-1">
+                            ID #{r.MaNV} · CC #{r.MaChamCong}
+                          </p>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
-                      {formatDateTime(r.CheckIn)}
+
+                    {/* Ngày */}
+                    <td className="px-5 py-3.5">
+                      <div>
+                        <p className="text-sm font-medium text-slate-700">
+                          {fmtDate(r.CheckIn)}
+                        </p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          {r.CheckIn
+                            ? new Date(r.CheckIn).toLocaleDateString("vi-VN", { weekday: "long" })
+                            : ""}
+                        </p>
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
-                      {formatDateTime(r.CheckOut)}
+
+                    {/* Check-in */}
+                    <td className="px-5 py-3.5">
+                      <div className={`inline-flex flex-col items-start`}>
+                        <span
+                          className={`text-sm font-bold ${isLate(r.CheckIn) ? "text-orange-600" : "text-slate-700"
+                            }`}
+                        >
+                          {fmtTime(r.CheckIn)}
+                        </span>
+                        {isLate(r.CheckIn) && (
+                          <span className="text-[10px] text-orange-500 font-medium">
+                            +{(() => {
+                              const d = new Date(r.CheckIn);
+                              const minsLate =
+                                (d.getHours() - WORK_START_HOUR) * 60 +
+                                d.getMinutes() -
+                                WORK_START_MIN;
+                              return fmtDuration(minsLate);
+                            })()}{" "}
+                            so giờ quy định
+                          </span>
+                        )}
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {calcDuration(r.CheckIn, r.CheckOut) ?? (
-                        <span className="text-slate-400">—</span>
+
+                    {/* Check-out */}
+                    <td className="px-5 py-3.5">
+                      {r.CheckOut ? (
+                        <div className="inline-flex flex-col items-start">
+                          <span
+                            className={`text-sm font-bold ${isEarlyLeave(r.CheckOut) ? "text-red-600" : "text-slate-700"
+                              }`}
+                          >
+                            {fmtTime(r.CheckOut)}
+                          </span>
+                          {isEarlyLeave(r.CheckOut) && (
+                            <span className="text-[10px] text-red-500 font-medium">
+                              Về sớm
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs text-amber-600 font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse inline-block" />
+                          Chưa ra
+                        </span>
                       )}
                     </td>
-                    <td className="px-4 py-3">{statusBadge(r.CheckOut)}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
+
+                    {/* Giờ công */}
+                    <td className="px-5 py-3.5">
+                      <HoursBar checkIn={r.CheckIn} checkOut={r.CheckOut} />
+                    </td>
+
+                    {/* Trạng thái */}
+                    <td className="px-5 py-3.5">
+                      <StatusBadge record={r} />
+                    </td>
+
+                    {/* Thao tác */}
+                    <td className="px-5 py-3.5">
+                      <div className="flex gap-1.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => setModal({ mode: "edit", record: r })}
-                          className="p-1.5 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 transition"
                           title="Chỉnh sửa"
+                          className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
                         </button>
                         <button
                           onClick={() => setDeleteTarget(r)}
-                          className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition"
                           title="Xóa"
+                          className="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                         </button>
@@ -461,50 +793,68 @@ function ChamCong() {
           </table>
         </div>
 
-        {/* pagination */}
-        {totalPages > 1 && (
-          <div className="px-6 py-3 border-t border-slate-100 flex items-center justify-between text-sm text-slate-500">
-            <span>
-              Hiển thị {(page - 1) * PAGE_SIZE + 1}–
-              {Math.min(page * PAGE_SIZE, filtered.length)} / {filtered.length} bản ghi
-            </span>
-            <div className="flex gap-1">
+        {/* Footer / Pagination */}
+        <div className="px-5 py-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-slate-500">
+            {filtered.length === 0
+              ? "Không có bản ghi"
+              : `Hiển thị ${(page - 1) * PAGE_SIZE + 1}–${Math.min(
+                page * PAGE_SIZE,
+                filtered.length
+              )} trong ${filtered.length} bản ghi`}
+          </p>
+
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1">
               <button
                 disabled={page === 1}
                 onClick={() => setPage((p) => p - 1)}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 disabled:opacity-40 hover:bg-slate-50 transition"
+                className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition text-sm"
               >
                 ‹
               </button>
+
               {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-                .map((p, i, arr) => (
-                  <>
-                    {i > 0 && arr[i - 1] !== p - 1 && (
-                      <span key={`ellipsis-${p}`} className="px-2 py-1.5 text-slate-400">…</span>
-                    )}
+                .filter(
+                  (p) =>
+                    p === 1 ||
+                    p === totalPages ||
+                    Math.abs(p - page) <= 1
+                )
+                .reduce((acc, p, i, arr) => {
+                  if (i > 0 && arr[i - 1] !== p - 1) acc.push("...");
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((item, i) =>
+                  item === "..." ? (
+                    <span key={`e${i}`} className="w-8 text-center text-slate-400 text-xs">
+                      …
+                    </span>
+                  ) : (
                     <button
-                      key={p}
-                      onClick={() => setPage(p)}
-                      className={`px-3 py-1.5 rounded-lg border transition ${page === p
-                        ? "bg-[#0d1c42] text-white border-[#0d1c42]"
-                        : "border-slate-200 hover:bg-slate-50"
+                      key={item}
+                      onClick={() => setPage(item)}
+                      className={`w-8 h-8 rounded-lg border text-sm font-medium transition ${page === item
+                          ? "bg-[#0d1c42] text-white border-[#0d1c42]"
+                          : "border-slate-200 text-slate-600 hover:bg-slate-50"
                         }`}
                     >
-                      {p}
+                      {item}
                     </button>
-                  </>
-                ))}
+                  )
+                )}
+
               <button
                 disabled={page === totalPages}
                 onClick={() => setPage((p) => p + 1)}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 disabled:opacity-40 hover:bg-slate-50 transition"
+                className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition text-sm"
               >
                 ›
               </button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Modals */}
