@@ -185,7 +185,7 @@ function CaiDat() {
         {/*  Sidebar tabs  */}
         <div className="lg:w-56 shrink-0">
           <nav className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden p-2 flex lg:flex-col gap-1">
-            {TABS.map(({ id, label, icon: IconComp }) => (
+            {TABS.map(({ id, label }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
@@ -355,34 +355,7 @@ function CaiDat() {
                 </form>
               </Section>
 
-              <Section title="Phiên đăng nhập" description="Quản lý các thiết bị đang đăng nhập">
-                <div className="flex flex-col gap-3">
-                  {[
-                    { device: "Chrome trên Windows", time: "Hiện tại", active: true },
-                    { device: "Firefox trên macOS", time: "2 ngày trước", active: false },
-                  ].map((s, i) => (
-                    <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-2.5 h-2.5 rounded-full ${s.active ? "bg-emerald-400" : "bg-slate-300"}`} />
-                        <div>
-                          <p className="text-sm font-medium text-slate-700">{s.device}</p>
-                          <p className="text-xs text-slate-400">{s.time}</p>
-                        </div>
-                      </div>
-                      {!s.active && (
-                        <button className="text-xs text-red-500 hover:text-red-700 transition font-medium">
-                          Thu hồi
-                        </button>
-                      )}
-                      {s.active && (
-                        <span className="text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full border border-emerald-100 font-medium">
-                          Đang dùng
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </Section>
+
             </>
           )}
 
@@ -506,44 +479,7 @@ function CaiDat() {
                 </div>
               </Section>
 
-              <Section title="Định dạng & Múi giờ">
-                <div className="flex flex-col gap-5">
-                  <Field label="Múi giờ">
-                    <select
-                      className={inputCls}
-                      value={sysSettings.timezone}
-                      onChange={(e) => setSysSettings((s) => ({ ...s, timezone: e.target.value }))}
-                    >
-                      <option value="Asia/Ho_Chi_Minh">Asia/Ho_Chi_Minh (GMT+7)</option>
-                      <option value="Asia/Bangkok">Asia/Bangkok (GMT+7)</option>
-                      <option value="Asia/Singapore">Asia/Singapore (GMT+8)</option>
-                    </select>
-                  </Field>
-                  <div className="border-t border-slate-50" />
-                  <Field label="Định dạng ngày">
-                    <select
-                      className={inputCls}
-                      value={sysSettings.dateFormat}
-                      onChange={(e) => setSysSettings((s) => ({ ...s, dateFormat: e.target.value }))}
-                    >
-                      <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                      <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                      <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-                    </select>
-                  </Field>
-                  <div className="border-t border-slate-50" />
-                  <Field label="Đơn vị tiền tệ">
-                    <select
-                      className={inputCls}
-                      value={sysSettings.currency}
-                      onChange={(e) => setSysSettings((s) => ({ ...s, currency: e.target.value }))}
-                    >
-                      <option value="VND">VND - Việt Nam Đồng</option>
-                      <option value="USD">USD - US Dollar</option>
-                    </select>
-                  </Field>
-                </div>
-              </Section>
+
 
               <div className="flex justify-end">
                 <button

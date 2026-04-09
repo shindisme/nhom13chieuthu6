@@ -25,11 +25,16 @@ const getInitials = (name = "") => {
 
 const formatDate = (iso) => {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  try {
+    return new Date(iso).toLocaleDateString("vi-VN", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  } catch {
+    return "—";
+  }
 };
 
 const calcYearsWorked = (startDate) => {
@@ -331,14 +336,9 @@ function EmployeeCard({ nv, luongData, onEdit, onDelete }) {
   const luong = luongData.find((l) => l.MaNV === nv.MaNV);
   const luongDisplay = formatSalary(luong);
 
-  // Giả lập thông tin chuyên cần & ngày phép (vì backend chưa có field này)
-  // Dùng MaNV để tạo giá trị ổn định thay vì random (tránh flickering khi re-render)
-  const chuyenCan = 85 + ((nv.MaNV * 7) % 15);
-  const ngayPhepCon = (nv.MaNV * 3) % 20;
-
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 p-5 flex flex-col gap-4 group">
-      {/* Top: Avatar + Info + Status */}
+      {/* Avatar + Info + Status */}
       <div className="flex items-start gap-3">
         <div className={`w-12 h-12 rounded-full ${avatarColor} flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm`}>
           {initials}
@@ -375,19 +375,11 @@ function EmployeeCard({ nv, luongData, onEdit, onDelete }) {
         )}
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats - chi du lieu thuc tu DB */}
       <div className="grid grid-cols-2 gap-x-4 gap-y-3 pt-2 border-t border-slate-100">
-        <div>
-          <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Chuyên cần</div>
-          <div className="text-sm font-bold text-emerald-600 mt-0.5">{chuyenCan}%</div>
-        </div>
         <div>
           <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Lương</div>
           <div className="text-sm font-bold text-slate-700 mt-0.5">{luongDisplay}</div>
-        </div>
-        <div>
-          <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Ngày phép còn</div>
-          <div className="text-sm font-bold text-slate-700 mt-0.5">{ngayPhepCon}</div>
         </div>
         <div>
           <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Ngày vào</div>
@@ -416,7 +408,7 @@ function EmployeeCard({ nv, luongData, onEdit, onDelete }) {
           Xóa
         </button>
       </div>
-    </div>
+    </div >
   );
 }
 
