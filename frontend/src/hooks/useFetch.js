@@ -1,29 +1,30 @@
-import { useState, useEffect } from "react";
-import api from "../config/api";
+import { useState, useEffect, useCallback } from "react";
+import api from "../api/axiosClient";
 
 const useFetch = (url) => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-    const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    const fetchData = async () => {
-        try {
-            setLoading(true);
-            const res = await api.get(url);
-            setData(res.data);
-        } catch (err) {
-            setError(err);
-        } finally {
-            setLoading(false);
-        }
-    };
+      const res = await api.get(url);
+      setData(res && res.data !== undefined ? res.data : res);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [url]);
 
-    useEffect(() => {
-        fetchData();
-    }, [url]);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-    return { data, loading, error, refetch: fetchData };
+  return { data, loading, error, refetch: fetchData };
 };
 
 export default useFetch;
