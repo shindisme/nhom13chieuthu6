@@ -337,7 +337,7 @@ function EmployeeCard({ nv, luongData, onEdit, onDelete }) {
   const luongDisplay = formatSalary(luong);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 p-5 flex flex-col gap-4 group">
+    <div className="bg-white rounded-3xl shadow-md hover:shadow-lg transition-all duration-300 p-5 flex flex-col gap-4 group">
       {/* Avatar + Info + Status */}
       <div className="flex items-start gap-3">
         <div className={`w-12 h-12 rounded-full ${avatarColor} flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm`}>
@@ -594,7 +594,7 @@ const NhanVien = () => {
 
       {/* Cards Grid / List Table */}
       {filtered.length === 0 && !loading ? (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-12 text-center">
+        <div className="bg-white rounded-3xl shadow-md p-12 text-center">
           <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -617,7 +617,7 @@ const NhanVien = () => {
         </div>
       ) : (
         /*  list view / table view  */
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="bg-white rounded-3xl shadow-md overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

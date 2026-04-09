@@ -61,7 +61,7 @@ function Toggle({ checked, onChange }) {
 /*  Section wrapper  */
 function Section({ title, description, children }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-3xl shadow-md overflow-hidden">
       <div className="px-6 py-5 border-b border-slate-100">
         <h2 className="font-semibold text-slate-800 text-base">{title}</h2>
         {description && <p className="text-sm text-slate-500 mt-0.5">{description}</p>}
@@ -184,7 +184,7 @@ function CaiDat() {
       <div className="flex flex-col lg:flex-row gap-6">
         {/*  Sidebar tabs  */}
         <div className="lg:w-56 shrink-0">
-          <nav className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden p-2 flex lg:flex-col gap-1">
+          <nav className="bg-white rounded-3xl shadow-md overflow-hidden p-2 flex lg:flex-col gap-1">
             {TABS.map(({ id, label, icon: IconComp }) => (
               <button
                 key={id}
@@ -208,7 +208,7 @@ function CaiDat() {
           {activeTab === "profile" && (
             <>
               {/* Avatar card */}
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+              <div className="bg-white rounded-3xl shadow-md p-6">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
                   <div className="relative shrink-0">
                     <div className="w-20 h-20 rounded-full bg-linear-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">

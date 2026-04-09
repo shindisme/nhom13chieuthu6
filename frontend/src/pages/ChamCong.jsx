@@ -393,7 +393,7 @@ function DeleteConfirm({ record, onClose, onDeleted }) {
 /*  Stat card  */
 function StatCard({ label, value, sub, icon, color }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm px-5 py-4 flex items-center gap-4">
+    <div className="bg-white rounded-3xl shadow-md px-5 py-4 flex items-center gap-4">
       <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg ${color}`}>
         {icon}
       </div>
@@ -542,7 +542,7 @@ function ChamCong() {
       </div>
 
       {/* ── Table card ── */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-md overflow-hidden">
 
         {/* Toolbar */}
         <div className="px-5 py-4 border-b border-slate-100">

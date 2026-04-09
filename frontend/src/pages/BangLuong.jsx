@@ -80,7 +80,7 @@ function BangLuong() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
-      <div className="mb-6 rounded-3xl bg-white p-6 shadow-sm shadow-slate-200">
+      <div className="mb-6 rounded-3xl bg-white p-6 shadow-md">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Bảng lương</p>
@@ -97,21 +97,21 @@ function BangLuong() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3 mb-6">
-        <div className="rounded-3xl bg-white p-6 shadow-sm shadow-slate-200">
+        <div className="rounded-3xl bg-white p-6 shadow-md">
           <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Tổng lương chi trả</p>
           <p className="mt-4 text-3xl font-semibold text-slate-900">{formatMoney(totalSalary)}</p>
         </div>
-        <div className="rounded-3xl bg-white p-6 shadow-sm shadow-slate-200">
+        <div className="rounded-3xl bg-white p-6 shadow-md">
           <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Số nhân viên</p>
           <p className="mt-4 text-3xl font-semibold text-slate-900">{totalEmployees} người</p>
         </div>
-        <div className="rounded-3xl bg-white p-6 shadow-sm shadow-slate-200">
+        <div className="rounded-3xl bg-white p-6 shadow-md">
           <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Tổng số ca làm</p>
           <p className="mt-4 text-3xl font-semibold text-slate-900">{totalShiftsAll} ca</p>
         </div>
       </div>
 
-      <div className="rounded-4xl bg-white p-6 shadow-sm shadow-slate-200">
+      <div className="rounded-4xl bg-white p-6 shadow-md">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-end">
           <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-4 py-3 min-w-[280px]">
             <input
