@@ -1,8 +1,7 @@
 function Dashboard() {
     return (
-        <div className="p-6">
-            <h1 className="text-2xl font-semibold">Dashboard</h1>
-            <p className="text-gray-500 mt-2">Trang quản lý nhân sự.</p>
+        <div>
+            <div className="mt-4 text-gray-500">Trang quản lý nhân sự.</div>
         </div>
     );
 }
