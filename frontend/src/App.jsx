@@ -1,21 +1,80 @@
-import UserManage from './pages/UserManage.jsx';
-import Dashboard from './pages/Dashboard.jsx';
-import Layout from './Layout.jsx';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import './App.css'
+import NhanVien from "./pages/NhanVien.jsx";
+import Dashboard from "./pages/Dashboard.jsx";
+import Login from "./pages/Login.jsx";
+import ChamCong from "./pages/ChamCong.jsx";
+import BangLuong from "./pages/BangLuong.jsx";
+import BaoCao from "./pages/BaoCao.jsx";
+import CaiDat from "./pages/CaiDat.jsx";
+import Layout from "./Layout.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import "./App.css";
+import { Bounce, ToastContainer, toast } from "react-toastify";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { setUnauthorizedHandler } from "./api/axiosClient";
 
 function App() {
-
   return (
     <BrowserRouter>
+      <AuthHandler />
       <Routes>
-        <Route element={<Layout />}>
+        {/* Public route */}
+        <Route path="/login" element={<Login />} />
+
+        {/* Protected routes */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
           <Route path="/" element={<Dashboard />} />
-          <Route path="/users-manager" element={<UserManage />} />
+          <Route path="/nhan-vien" element={<NhanVien />} />
+          <Route path="/cham-cong" element={<ChamCong />} />
+          <Route path="/bang-luong" element={<BangLuong />} />
+          <Route path="/bao-cao" element={<BaoCao />} />
+          <Route path="/cai-dat" element={<CaiDat />} />
         </Route>
+
+        {/* Catch all - redirect về login */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={2500}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        transition={Bounce}
+      />
     </BrowserRouter>
-  )
+  );
+}
+
+function AuthHandler() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      localStorage.removeItem("roleId");
+      toast.info("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      navigate("/login");
+    });
+
+    return () => setUnauthorizedHandler(null);
+  }, [navigate]);
+
+  return null;
 }
 
 export default App;
