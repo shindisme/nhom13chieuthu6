@@ -9,11 +9,15 @@ import Layout from "./Layout.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import "./App.css";
-import { Bounce, ToastContainer } from "react-toastify";
+import { Bounce, ToastContainer, toast } from "react-toastify";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { setUnauthorizedHandler } from "./api/axiosClient";
 
 function App() {
   return (
     <BrowserRouter>
+      <AuthHandler />
       <Routes>
         {/* Public route */}
         <Route path="/login" element={<Login />} />
@@ -53,6 +57,24 @@ function App() {
       />
     </BrowserRouter>
   );
+}
+
+function AuthHandler() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      localStorage.removeItem("roleId");
+      toast.info("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      navigate("/login");
+    });
+
+    return () => setUnauthorizedHandler(null);
+  }, [navigate]);
+
+  return null;
 }
 
 export default App;
