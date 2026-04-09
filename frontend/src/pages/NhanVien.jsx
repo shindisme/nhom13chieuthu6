@@ -39,6 +39,16 @@ const calcYearsWorked = (startDate) => {
   return Math.max(0, Math.floor((now - start) / (365.25 * 24 * 60 * 60 * 1000)));
 };
 
+// tinh tong luong va format thanh VND
+const formatSalary = (luong) => {
+  if (!luong) return "—";
+  const base = parseFloat(luong.LuongCoBan) || 0;
+  const factor = parseFloat(luong.HeSoLuong) || 1;
+  const allowance = parseFloat(luong.PhuCap) || 0;
+  const total = base * factor + allowance;
+  return total.toLocaleString("vi-VN") + " đ";
+};
+
 const STATUS_MAP = {
   "Đang làm": {
     bg: "bg-emerald-50",
@@ -317,9 +327,9 @@ function EmployeeCard({ nv, luongData, onEdit, onDelete }) {
   const initials = getInitials(nv.HoTen);
   const yearsWorked = calcYearsWorked(nv.NgayBatDau);
 
-  // Tìm lương của nhân viên này
+  // tinh luong
   const luong = luongData.find((l) => l.MaNV === nv.MaNV);
-  const luongTrieu = luong ? ((luong.LuongCoBan * luong.HeSoLuong + luong.PhuCap) / 1000000).toFixed(1) : "—";
+  const luongDisplay = formatSalary(luong);
 
   // Giả lập thông tin chuyên cần & ngày phép (vì backend chưa có field này)
   // Dùng MaNV để tạo giá trị ổn định thay vì random (tránh flickering khi re-render)
@@ -372,8 +382,8 @@ function EmployeeCard({ nv, luongData, onEdit, onDelete }) {
           <div className="text-sm font-bold text-emerald-600 mt-0.5">{chuyenCan}%</div>
         </div>
         <div>
-          <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Lương (triệu)</div>
-          <div className="text-sm font-bold text-slate-700 mt-0.5">{luongTrieu}</div>
+          <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Lương</div>
+          <div className="text-sm font-bold text-slate-700 mt-0.5">{luongDisplay}</div>
         </div>
         <div>
           <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Ngày phép còn</div>
@@ -620,7 +630,7 @@ const NhanVien = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100">
-                  {["STT", "Nhân viên", "Phòng ban", "Trạng thái", "SĐT", "Lương (triệu)", "Ngày vào", "Thao tác"].map(
+                  {["STT", "Nhân viên", "Phòng ban", "Trạng thái", "SĐT", "Lương", "Ngày vào", "Thao tác"].map(
                     (h) => (
                       <th
                         key={h}
@@ -639,9 +649,7 @@ const NhanVien = () => {
                   const status = getEmployeeStatus(nv);
                   const statusStyle = STATUS_MAP[status] || STATUS_MAP["Đang làm"];
                   const luong = luongData.find((l) => l.MaNV === nv.MaNV);
-                  const luongTrieu = luong
-                    ? ((luong.LuongCoBan * luong.HeSoLuong + luong.PhuCap) / 1000000).toFixed(1)
-                    : "—";
+                  const luongDisplay = formatSalary(luong);
 
                   return (
                     <tr key={nv.MaNV} className="hover:bg-slate-50/60 transition">
@@ -666,7 +674,7 @@ const NhanVien = () => {
                       <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
                         {nv.SDT || "—"}
                       </td>
-                      <td className="px-4 py-3 text-slate-700 font-semibold">{luongTrieu}</td>
+                      <td className="px-4 py-3 text-slate-700 font-semibold">{luongDisplay}</td>
                       <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
                         {formatDate(nv.NgayBatDau)}
                       </td>
