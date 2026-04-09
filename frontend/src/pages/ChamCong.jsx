@@ -30,8 +30,6 @@ const fmtDate = (iso) =>
 const fmtTime = (iso) =>
   fmt(iso, { hour: "2-digit", minute: "2-digit" });
 
-const fmtDateTimeShort = (iso) =>
-  fmt(iso, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
 const calcMinutes = (checkIn, checkOut) => {
   if (!checkIn || !checkOut) return null;
