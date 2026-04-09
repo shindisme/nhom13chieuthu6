@@ -3,107 +3,92 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
 const validateLogin = (email, password) => {
-  const errors = [];
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const errors = [];
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  if (!email || !emailRegex.test(email.trim())) {
-    errors.push("Email không hợp lệ.");
-  }
-  if (!password || password.length < 1) {
-    errors.push("Vui lòng nhập mật khẩu.");
-  }
-  return errors;
+    if (!email || !emailRegex.test(email.trim())) {
+        errors.push("Email không hợp lệ.");
+    }
+    if (!password || password.length < 1) {
+        errors.push("Vui lòng nhập mật khẩu.");
+    }
+    return errors;
 };
 
 export const login = async (req, res) => {
-  const { email, password } = req.body;
-  console.log("BẮT ĐẦU KIỂM TRA ĐĂNG NHẬP");
-  console.log("Email nhận từ Client:", `[${email}]`);
+    const { email, password } = req.body;
 
-  const errors = validateLogin(email, password);
-  if (errors.length > 0) {
-    return res.status(400).json({ message: "Dữ liệu không hợp lệ.", errors });
-  }
-  const cleanEmail = email.trim();
-  try {
-    const connection = await db;
-    const query = `
+    const errors = validateLogin(email, password);
+    if (errors.length > 0) {
+        return res.status(400).json({ message: "Dữ liệu không hợp lệ.", errors });
+    }
+    const cleanEmail = email.trim();
+    try {
+        const connection = await db;
+        const query = `
             SELECT tk.*, tr.MaRole 
             FROM taikhoan tk 
             LEFT JOIN taikhoan_role tr ON tk.MaTK = tr.MaTK 
             WHERE tk.Email = ?
         `;
 
-    const [checkAll] = await connection.execute("SELECT Email FROM taikhoan");
-    console.log("Danh sách tất cả email trong bảng này:", checkAll);
-    const [rows] = await connection.execute(query, [cleanEmail]);
-    console.log("Số lượng user tìm thấy trong DB:", rows.length);
-    if (rows.length > 0) {
-      console.log("Thông tin User tìm được:", {
-        MaTK: rows[0].MaTK,
-        Email: rows[0].Email,
-        MaRole: rows[0].MaRole,
-      });
+        const [rows] = await connection.execute(query, [cleanEmail]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Tài khoản không tồn tại!",
+            });
+        }
+
+        const user = rows[0];
+
+        const isMatch = await bcrypt.compare(password, user.MatKhau);
+
+        if (!isMatch) {
+            return res.status(401).json({
+                success: false,
+                message: "Mật khẩu không chính xác.",
+            });
+        }
+
+        const token = jwt.sign(
+            { id: user.MaTK, roleId: user.MaRole, email: user.Email },
+            process.env.JWT_SECRET || "nhom13chieuthu6",
+            { expiresIn: "24h" },
+        );
+
+        res.json({
+            success: true,
+            message: "Đăng nhập thành công.",
+            token,
+            roleId: user.MaRole,
+            user: {
+                id: user.MaTK,
+                email: user.Email,
+                name: user.HoTen || user.TenTK || "Người dùng",
+            },
+        });
+    } catch (error) {
+        console.error("LỖI HỆ THỐNG:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Lỗi server",
+            error: error.stack,
+            error: error.message,
+        });
     }
-
-    if (rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Tài khoản không tồn tại trong hệ thống.",
-      });
-    }
-
-    const user = rows[0];
-
-    const isMatch = await bcrypt.compare(password, user.MatKhau);
-
-    if (!isMatch) {
-      console.log("Mật khẩu không khớp!");
-      return res.status(401).json({
-        success: false,
-        message: "Mật khẩu không chính xác.",
-      });
-    }
-
-    const token = jwt.sign(
-      { id: user.MaTK, roleId: user.MaRole, email: user.Email },
-      process.env.JWT_SECRET || "nhom13chieuthu6",
-      { expiresIn: "24h" },
-    );
-
-    console.log("Đăng nhập thành công!");
-
-    res.json({
-      success: true,
-      message: "Đăng nhập thành công.",
-      token,
-      roleId: user.MaRole,
-      user: {
-        id: user.MaTK,
-        email: user.Email,
-        name: user.HoTen || user.TenTK || "Người dùng",
-      },
-    });
-  } catch (error) {
-    console.error("LỖI HỆ THỐNG:", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Lỗi server",
-      error: error.stack,
-      error: error.message,
-    });
-  }
 };
 
 export const logout = async (req, res) => {
-  try {
-    res.status(200).json({
-      success: true,
-      message: "Đăng xuất thành công.",
-    });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Lỗi khi đăng xuất", error: error.message });
-  }
+    try {
+        res.status(200).json({
+            success: true,
+            message: "Đăng xuất thành công.",
+        });
+    } catch (error) {
+        res
+            .status(500)
+            .json({ message: "Lỗi khi đăng xuất", error: error.message });
+    }
 };

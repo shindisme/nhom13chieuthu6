@@ -6,7 +6,6 @@ import {
 } from "../models/bangluong.model.js";
 
 export const getAll = async (req, res) => {
-    // Có thể lọc theo tháng/năm qua query params: ?thang=4&nam=2026
     const { thang, nam } = req.query;
 
     try {
