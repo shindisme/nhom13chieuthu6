@@ -1,186 +1,117 @@
-import db from "../config/db.js";
+import * as NhanVienModel from "../models/nhanvien.model.js";
+const formatToMySQLDate = (dateStr) => {
+    if (!dateStr || typeof dateStr !== "string") return null;
+    if (dateStr.includes('T')) return dateStr.split('T')[0];
+    if (dateStr.includes('/')) return dateStr.split('/').reverse().join('-');
+
+    return dateStr;
+};
 
 export const getAllNhanVien = async (req, res) => {
     try {
-        const connection = await db;
-        const query = `
-            SELECT nv.*, pb.TenPB 
-            FROM nhanvien nv
-            LEFT JOIN phongban pb ON nv.MaPB = pb.MaPB
-        `;
-        const [rows] = await connection.execute(query);
-
-        return res.status(200).json({
-            success: true,
-            data: rows,
-        });
+        const data = await NhanVienModel.getAllNhanVienModel();
+        res.status(200).json({ success: true, data });
     } catch (error) {
-        return res
-            .status(500)
-            .json({
-                success: false,
-                message: "Lỗi lấy danh sách",
-                error: error.message,
-            });
+        res.status(500).json({
+            success: false,
+            message: "Lỗi lấy danh sách nhân viên",
+            error: error.message
+        });
     }
 };
 
 export const getNhanVienById = async (req, res) => {
-    const { id } = req.params;
-
     try {
-        const connection = await db;
-        const query = `
-            SELECT nv.*, pb.TenPB, cv.TenCV
-            FROM nhanvien nv
-            LEFT JOIN phongban pb ON nv.MaPB = pb.MaPB
-            LEFT JOIN chucvu cv ON nv.MaCV = cv.MaCV
-            WHERE nv.MaNV = ?
-        `;
-        const [rows] = await connection.execute(query, [id]);
-
-        if (rows.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Không tìm thấy nhân viên có mã: " + id,
-            });
+        const data = await NhanVienModel.getNhanVienByIdModel(req.params.id);
+        if (!data) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy nhân viên" });
         }
-
-        return res.status(200).json({
-            success: true,
-            data: rows[0],
-        });
+        res.status(200).json({ success: true, data });
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Lỗi hệ thống khi lấy thông tin nhân viên",
-            error: error.message,
-        });
+        res.status(500).json({ success: false, message: "Lỗi hệ thống", error: error.message });
     }
 };
-const formatToMySQLDate = (dateStr) => {
-    if (!dateStr || typeof dateStr !== "string") return null;
-    if (dateStr.includes("/")) {
-        const [day, month, year] = dateStr.split("/");
-        return `${year}-${month}-${day}`;
-    }
-    return dateStr;
-};
+
 export const createNhanVien = async (req, res) => {
     const { HoTen, GioiTinh, NgaySinh, SDT, DiaChi, NgayBatDau, MaPB, MaCV } = req.body;
-    if (!HoTen || !HoTen.trim()) {
+
+    if (!HoTen?.trim()) {
         return res.status(400).json({ success: false, message: "Họ tên không được để trống" });
     }
-    const validGioiTinh = (GioiTinh === 'Nam' || GioiTinh === 'Nu') ? GioiTinh : 'Nam';
 
     try {
-        const connection = await db;
-        const query = `
-      INSERT INTO nhanvien (HoTen, GioiTinh, NgaySinh, SDT, DiaChi, NgayBatDau, MaPB, MaCV) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-        const [result] = await connection.execute(query, [
-            HoTen.trim(),
-            validGioiTinh,
-            formatToMySQLDate(NgaySinh) || null,
-            SDT || null,
-            DiaChi || null,
-            formatToMySQLDate(NgayBatDau) || null,
-            MaPB || null,
-            MaCV || null
-        ]);
+        const result = await NhanVienModel.createNhanVienModel({
+            HoTen: HoTen.trim(),
+            GioiTinh: (GioiTinh === 'Nu' || GioiTinh === 'Nữ') ? 'Nữ' : 'Nam',
+            NgaySinh: formatToMySQLDate(NgaySinh),
+            SDT: SDT || null,
+            DiaChi: DiaChi || null,
+            NgayBatDau: formatToMySQLDate(NgayBatDau),
+            MaPB: MaPB || null,
+            MaCV: MaCV || null
+        });
 
-        return res.status(201).json({
+        res.status(201).json({
             success: true,
             message: "Thêm nhân viên thành công",
-            insertId: result.insertId,
+            insertId: result.insertId
         });
     } catch (error) {
-        return res.status(500).json({
+        res.status(500).json({
             success: false,
-            message: "Lỗi khi thêm: " + error.sqlMessage,
+            message: "Lỗi khi thêm mới nhân viên",
+            error: error.message
         });
-    }
-};
-
-export const deleteNhanVien = async (req, res) => {
-    const { id } = req.params;
-
-    try {
-        const connection = await db;
-        const [result] = await connection.execute(
-            "DELETE FROM nhanvien WHERE MaNV = ?",
-            [id],
-        );
-
-        if (result.affectedRows === 0) {
-            return res
-                .status(404)
-                .json({ success: false, message: "Nhân viên không tồn tại" });
-        }
-
-        return res
-            .status(200)
-            .json({ success: true, message: "Đã xóa nhân viên ID: " + id });
-    } catch (error) {
-        if (error.errno === 1451) {
-            return res
-                .status(400)
-                .json({
-                    success: false,
-                    message: "Không thể xóa do nhân viên đã có dữ liệu lương/chấm công!",
-                });
-        }
-        return res
-            .status(500)
-            .json({ success: false, message: "Lỗi khi xóa", error: error.message });
     }
 };
 
 export const updateNhanVien = async (req, res) => {
     const { id } = req.params;
-    const { HoTen, GioiTinh, NgaySinh, SDT, DiaChi, MaPB, MaCV, NgayBatDau } =
-        req.body;
-
     try {
-        const connection = await db;
-        const query = `
-            UPDATE nhanvien 
-            SET HoTen=?, GioiTinh=?, NgaySinh=?, SDT=?, DiaChi=?, MaPB=?, MaCV=?, NgayBatDau=? 
-            WHERE MaNV=?
-        `;
-        const [result] = await connection.execute(query, [
-            HoTen,
-            GioiTinh,
-            NgaySinh,
-            SDT,
-            DiaChi,
-            MaPB,
-            MaCV,
-            NgayBatDau,
-            id,
-        ]);
+        const updateData = {
+            ...req.body,
+            NgaySinh: formatToMySQLDate(req.body.NgaySinh),
+            NgayBatDau: formatToMySQLDate(req.body.NgayBatDau),
+            MaPB: req.body.MaPB || null,
+            MaCV: req.body.MaCV || null
+        };
+
+        const result = await NhanVienModel.updateNhanVienModel(id, updateData);
 
         if (result.affectedRows === 0) {
-            return res
-                .status(404)
-                .json({
-                    success: false,
-                    message: "Không tìm thấy nhân viên để cập nhật",
-                });
+            return res.status(404).json({ success: false, message: "Nhân viên không tồn tại" });
         }
 
-        return res.status(200).json({
+        res.status(200).json({
             success: true,
-            message: "Cập nhật nhân viên " + id + " thành công!",
+            message: `Cập nhật nhân viên ${id} thành công!`
         });
     } catch (error) {
-        return res
-            .status(500)
-            .json({
-                success: false,
-                message: "Lỗi khi cập nhật",
-                error: error.message,
-            });
+        res.status(500).json({
+            success: false,
+            message: "Lỗi khi cập nhật dữ liệu",
+            error: error.message
+        });
+    }
+};
+
+export const deleteNhanVien = async (req, res) => {
+    try {
+        const result = await NhanVienModel.deleteNhanVienModel(req.params.id);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: "Nhân viên không tồn tại" });
+        }
+
+        res.status(200).json({ success: true, message: "Đã xóa nhân viên thành công" });
+    } catch (error) {
+        const isForeignKeyError = error.errno === 1451;
+        res.status(isForeignKeyError ? 400 : 500).json({
+            success: false,
+            message: isForeignKeyError
+                ? "Không thể xóa do nhân viên này đang có dữ liệu liên quan (lương/chấm công)!"
+                : "Lỗi khi xóa nhân viên",
+            error: error.message
+        });
     }
 };
