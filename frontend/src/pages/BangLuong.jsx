@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import useFetch from "../hooks/useFetch";
+import { exportToExcel } from "../utils/exportUtils";
 
 const formatMoney = (value) =>
   value.toLocaleString("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).replace("₫", "đ");
@@ -25,9 +26,12 @@ const getAvatarColor = (id) => AVATAR_COLORS[(id ?? 0) % AVATAR_COLORS.length];
 
 function BangLuong() {
   const [search, setSearch] = useState("");
+  const currentDate = new Date();
+  const [thang, setThang] = useState(currentDate.getMonth() + 1);
+  const [nam, setNam] = useState(currentDate.getFullYear());
 
   // Fetch data
-  const { data: bgRes, loading: loading1 } = useFetch("/bang-luong");
+  const { data: bgRes, loading: loading1 } = useFetch(`/bang-luong?thang=${thang}&nam=${nam}`);
   const { data: nvRes, loading: loading2 } = useFetch("/nhan-vien");
   const { data: luongRes, loading: loading3 } = useFetch("/luong");
 
@@ -36,33 +40,41 @@ function BangLuong() {
     const nhanViens = Array.isArray(nvRes) ? nvRes : nvRes?.data ?? [];
     const luongs = Array.isArray(luongRes) ? luongRes : luongRes?.data ?? [];
 
-    if (bangLuongs.length === 0) return [];
+    if (nhanViens.length === 0) return [];
 
-    return bangLuongs.map((bl) => {
-      const nv = nhanViens.find(n => n.MaNV === bl.MaNV) || {};
-      const l = luongs.find(x => x.MaNV === bl.MaNV) || {};
+    return nhanViens.map((nv) => {
+      const bl = bangLuongs.find((x) => x.MaNV === nv.MaNV) || {};
+      const l = luongs.find((x) => x.MaNV === nv.MaNV) || {};
 
-      const basicSalary = (parseFloat(l.LuongCoBan) || 0) * (parseFloat(l.HeSoLuong) || 1);
+      // Tính lương cơ bản
+      const basicSalaryConfig = parseFloat(l.LuongCoBan) || 0;
+      const heSo = parseFloat(l.HeSoLuong) || 1;
       const allowance = parseFloat(l.PhuCap) || 0;
-      const netSalary = parseFloat(bl.TongLuong) || 0;
 
-      const name = nv.HoTen || bl.HoTen || "Unknown";
-      const year = bl.Nam || new Date().getFullYear();
+      const basicSalary = basicSalaryConfig * heSo;
+      const totalShifts = parseFloat(bl.TongCa) || 0;
+
+      const netSalary = (bl.TongLuong != null) ? parseFloat(bl.TongLuong)
+        : basicSalary + allowance;
+
+      const name = nv.HoTen || "Unknown";
+      const year = bl.Nam || nam;
 
       return {
-        id: bl.MaBangLuong,
-        maNv: bl.MaNV,
+        id: bl.MaBangLuong || `temp-${nv.MaNV}`,
+        maNv: nv.MaNV,
         avatar: getInitials(name),
         name,
-        code: `NV-${year}-${String(bl.MaNV).padStart(3, '0')}`,
+        code: `NV-${String(nv.MaNV).padStart(3, '0')}`,
         department: nv.TenPB || "Khác",
         basicSalary,
         allowance,
-        totalShifts: bl.TongCa || 0,
-        netSalary
+        totalShifts,
+        netSalary,
+        daChot: !!bl.MaBangLuong
       };
     });
-  }, [bgRes, nvRes, luongRes]);
+  }, [bgRes, nvRes, luongRes, nam]);
 
   const filteredRows = useMemo(() => {
     return rawRows.filter((row) =>
@@ -72,24 +84,57 @@ function BangLuong() {
     );
   }, [search, rawRows]);
 
-  const totalSalary = rawRows.reduce((sum, row) => sum + row.netSalary, 0);
+  const totalSalary = rawRows.reduce((sum, row) => sum + (row.netSalary || 0), 0);
   const totalEmployees = rawRows.length;
-  const totalShiftsAll = rawRows.reduce((sum, row) => sum + row.totalShifts, 0);
+  const totalShiftsAll = rawRows.reduce((sum, row) => sum + (row.totalShifts || 0), 0);
 
   const isLoading = loading1 || loading2 || loading3;
 
+  const handleExport = () => {
+    const exportData = filteredRows.map((row) => ({
+      "Mã nhân viên": row.code,
+      "Họ tên": row.name,
+      "Phòng ban": row.department,
+      "Lương cơ bản": formatMoney(row.basicSalary),
+      "Phụ cấp": formatMoney(row.allowance),
+      "Tổng ca": row.totalShifts,
+      "Thực lĩnh": formatMoney(row.netSalary),
+    }));
+    exportToExcel(exportData, `BangLuong_Thang_${new Date().getMonth() + 1}_${new Date().getFullYear()}`);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 p-6">
-      <div className="mb-6 rounded-3xl bg-white p-6 shadow-md">
+      <div className="mb-6 rounded-3xl bg-white p-6 shadow-md transition-shadow hover:shadow-lg">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Bảng lương</p>
-            <h1 className="mt-2 text-3xl font-semibold text-slate-900">Bảng lương Tháng {new Date().getMonth() + 1}/{new Date().getFullYear()}</h1>
+            <h1 className="mt-2 text-3xl font-semibold text-slate-900">Bảng lương Tháng {thang}/{nam}</h1>
             <p className="mt-2 text-sm text-slate-500">Xem lương nhân viên theo tháng và năm</p>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <button className="rounded-full border border-slate-200 bg-white px-5 py-2 text-slate-700 transition hover:bg-slate-50">
+            {/* Bộ lọc tháng/năm */}
+            <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-2xl shadow-sm border border-slate-100">
+              <select
+                value={thang}
+                onChange={e => setThang(Number(e.target.value))}
+                className="bg-transparent text-sm font-medium text-slate-700 outline-none"
+              >
+                {[...Array(12)].map((_, i) => (
+                  <option key={i + 1} value={i + 1}>Tháng {i + 1}</option>
+                ))}
+              </select>
+              <span className="text-slate-300">/</span>
+              <input
+                type="number"
+                value={nam}
+                onChange={e => setNam(Number(e.target.value))}
+                className="w-16 bg-transparent text-sm font-medium text-slate-700 outline-none"
+                min="2000" max="2100"
+              />
+            </div>
+
+            <button onClick={handleExport} className="rounded-full bg-white shadow-sm hover:shadow-md px-5 py-2 text-slate-700 transition font-medium">
               Xuất bảng lương
             </button>
           </div>
@@ -111,9 +156,9 @@ function BangLuong() {
         </div>
       </div>
 
-      <div className="rounded-4xl bg-white p-6 shadow-md">
+      <div className="rounded-4xl bg-white p-6 shadow-md transition-shadow hover:shadow-lg">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-end">
-          <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-4 py-3 min-w-[280px]">
+          <div className="flex items-center gap-3 rounded-full bg-white shadow-sm px-4 py-3 min-w-[280px]">
             <input
               type="search"
               placeholder="Tìm nhân viên..."
@@ -159,7 +204,7 @@ function BangLuong() {
                 </tr>
               ) : (
                 filteredRows.map((row) => (
-                  <tr key={row.id} className="bg-slate-50 rounded-3xl text-sm text-slate-700 shadow-sm shadow-slate-100 hover:bg-slate-100 transition">
+                  <tr key={row.id} className="bg-white rounded-3xl text-sm text-slate-700 shadow-sm hover:shadow-md transition-shadow">
                     <td className="whitespace-nowrap rounded-l-3xl bg-white px-4 py-4">
                       <div className="flex items-center gap-3">
                         <div className={`flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold text-white ${getAvatarColor(row.maNv)}`}>
@@ -187,11 +232,11 @@ function BangLuong() {
           <div className="text-sm text-slate-500">Hiển thị {filteredRows.length} / {totalEmployees} nhân viên</div>
           {filteredRows.length > 0 && (
             <div className="flex items-center gap-2 text-sm">
-              <button className="rounded-full border border-slate-200 bg-white px-4 py-2 text-slate-600 hover:bg-slate-100 transition">Trước</button>
+              <button className="rounded-full bg-white shadow-sm hover:shadow-md px-4 py-2 text-slate-600 transition">Trước</button>
               <div className="flex items-center gap-2">
-                <button className="rounded-full bg-slate-900 px-3 py-2 text-white">1</button>
+                <button className="rounded-full bg-slate-900 shadow-sm px-3 py-2 text-white">1</button>
               </div>
-              <button className="rounded-full border border-slate-200 bg-white px-4 py-2 text-slate-600 hover:bg-slate-100 transition">Sau</button>
+              <button className="rounded-full bg-white shadow-sm hover:shadow-md px-4 py-2 text-slate-600 transition">Sau</button>
             </div>
           )}
         </div>

@@ -3,6 +3,8 @@ import Dashboard from "./pages/Dashboard.jsx";
 import Login from "./pages/Login.jsx";
 import ChamCong from "./pages/ChamCong.jsx";
 import BangLuong from "./pages/BangLuong.jsx";
+import PhongBan from "./pages/PhongBan.jsx";
+import QuanLyLuong from "./pages/QuanLyLuong.jsx";
 import BaoCao from "./pages/BaoCao.jsx";
 import CaiDat from "./pages/CaiDat.jsx";
 import Layout from "./Layout.jsx";
@@ -33,6 +35,8 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/nhan-vien" element={<NhanVien />} />
           <Route path="/cham-cong" element={<ChamCong />} />
+          <Route path="/phong-ban" element={<PhongBan />} />
+          <Route path="/quan-ly-luong" element={<QuanLyLuong />} />
           <Route path="/bang-luong" element={<BangLuong />} />
           <Route path="/bao-cao" element={<BaoCao />} />
           <Route path="/cai-dat" element={<CaiDat />} />

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import useFetch from "../hooks/useFetch";
-import nhanVienService from "../services/nhanVienService";
-import { toast } from "react-toastify";
+import NhanVienModal from "../components/NhanVienModal";
+import DeleteConfirm from "../components/DeleteConfirm";
+import { exportToExcel } from "../utils/exportUtils";
 
 // ham tien ich
 const AVATAR_COLORS = [
@@ -95,235 +96,7 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-// modal them/sua nhan vien
-function NhanVienModal({ mode, record, departments, onClose, onSaved }) {
-  const isEdit = mode === "edit";
-
-  const [form, setForm] = useState({
-    HoTen: record?.HoTen ?? "",
-    GioiTinh: record?.GioiTinh ?? "Nam",
-    NgaySinh: record?.NgaySinh ? new Date(record.NgaySinh).toISOString().split("T")[0] : "",
-    SDT: record?.SDT ?? "",
-    DiaChi: record?.DiaChi ?? "",
-    NgayBatDau: record?.NgayBatDau ? new Date(record.NgayBatDau).toISOString().split("T")[0] : "",
-    MaPB: record?.MaPB ?? "",
-    MaCV: record?.MaCV ?? "",
-  });
-  const [saving, setSaving] = useState(false);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.HoTen.trim()) return toast.warning("Vui lòng nhập họ tên");
-    if (!form.MaPB) return toast.warning("Vui lòng chọn phòng ban");
-
-    try {
-      setSaving(true);
-      if (isEdit) {
-        await nhanVienService.update(record.MaNV, form);
-        toast.success("Cập nhật nhân viên thành công");
-      } else {
-        await nhanVienService.insert(form);
-        toast.success("Thêm nhân viên thành công");
-      }
-      onSaved();
-    } catch (err) {
-      const msg = err?.response?.data?.message || "Có lỗi xảy ra";
-      toast.error(msg);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
-        {/* tieu de modal */}
-        <div className="bg-linear-to-r from-[#0d1c42] to-[#1e40af] px-6 py-4 flex items-center justify-between">
-          <h2 className="text-white font-semibold text-base">
-            {isEdit ? "Chỉnh sửa nhân viên" : "Thêm nhân viên mới"}
-          </h2>
-          <button onClick={onClose} className="text-white/70 hover:text-white text-xl leading-none">
-            ×
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
-          {/* Họ tên */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-slate-700">
-              Họ tên <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="HoTen"
-              value={form.HoTen}
-              onChange={handleChange}
-              className="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-              placeholder="Nhập họ tên"
-            />
-          </div>
-
-          {/* Row: Giới tính + Ngày sinh */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-slate-700">Giới tính</label>
-              <select
-                name="GioiTinh"
-                value={form.GioiTinh}
-                onChange={handleChange}
-                className="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-              >
-                <option value="Nam">Nam</option>
-                <option value="Nữ">Nữ</option>
-              </select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-slate-700">Ngày sinh</label>
-              <input
-                type="date"
-                name="NgaySinh"
-                value={form.NgaySinh}
-                onChange={handleChange}
-                className="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-              />
-            </div>
-          </div>
-
-          {/* Row: SDT + Ngày bắt đầu */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-slate-700">Số điện thoại</label>
-              <input
-                name="SDT"
-                value={form.SDT}
-                onChange={handleChange}
-                className="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-                placeholder="Số điện thoại"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-slate-700">Ngày bắt đầu</label>
-              <input
-                type="date"
-                name="NgayBatDau"
-                value={form.NgayBatDau}
-                onChange={handleChange}
-                className="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-              />
-            </div>
-          </div>
-
-          {/* Địa chỉ */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-slate-700">Địa chỉ</label>
-            <input
-              name="DiaChi"
-              value={form.DiaChi}
-              onChange={handleChange}
-              className="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-              placeholder="Địa chỉ"
-            />
-          </div>
-
-          {/* Phòng ban */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-slate-700">
-              Phòng ban <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="MaPB"
-              value={form.MaPB}
-              onChange={handleChange}
-              className="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-            >
-              <option value="">-- Chọn phòng ban --</option>
-              {departments.map((pb) => (
-                <option key={pb.MaPB} value={pb.MaPB}>
-                  {pb.TenPB}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 border border-slate-200 rounded-lg py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 bg-[#0d1c42] hover:bg-[#1e40af] text-white rounded-lg py-2.5 text-sm font-medium transition disabled:opacity-50"
-            >
-              {saving ? "Đang lưu..." : isEdit ? "Cập nhật" : "Thêm mới"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-function DeleteConfirm({ record, onClose, onDeleted }) {
-  const [loading, setLoading] = useState(false);
-
-  const handleDelete = async () => {
-    try {
-      setLoading(true);
-      await nhanVienService.delete(record.MaNV);
-      toast.success("Đã xóa nhân viên");
-      onDeleted();
-    } catch (err) {
-      const msg = err?.response?.data?.message || "Xóa thất bại";
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 flex flex-col gap-4">
-        <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto">
-          <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-        </div>
-        <div className="text-center">
-          <h3 className="font-semibold text-slate-800">Xác nhận xóa</h3>
-          <p className="text-sm text-slate-500 mt-1">
-            Xóa nhân viên <strong>{record.HoTen}</strong>?
-            <br />
-            Hành động này không thể hoàn tác.
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 border border-slate-200 rounded-lg py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition"
-          >
-            Hủy
-          </button>
-          <button
-            onClick={handleDelete}
-            disabled={loading}
-            className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-lg py-2.5 text-sm font-medium transition disabled:opacity-50"
-          >
-            {loading ? "Đang xóa..." : "Xóa"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+// Deleted modal code
 
 // card nhan vien
 function EmployeeCard({ nv, luongData, onEdit, onDelete }) {
@@ -489,6 +262,22 @@ const NhanVien = () => {
     return matchSearch && matchTab;
   });
 
+  const handleExport = () => {
+    if (filtered.length === 0) return;
+    const exportData = filtered.map((nv, idx) => ({
+      "STT": idx + 1,
+      "Mã NV": `NV-${String(nv.MaNV).padStart(3, '0')}`,
+      "Họ tên": nv.HoTen,
+      "Giới tính": nv.GioiTinh || "—",
+      "SĐT": nv.SDT || "—",
+      "Ngày sinh": formatDate(nv.NgaySinh),
+      "Ngày bắt đầu": formatDate(nv.NgayBatDau),
+      "Phòng ban": nv.TenPB || "Chưa phân phòng",
+      "Trạng thái": getEmployeeStatus(nv),
+    }));
+    exportToExcel(exportData, "DanhSachNhanVien");
+  };
+
   if (loading)
     return (
       <div className="flex items-center justify-center py-24 text-slate-400">
@@ -518,7 +307,7 @@ const NhanVien = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition shadow-sm">
+          <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition shadow-sm">
             <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>

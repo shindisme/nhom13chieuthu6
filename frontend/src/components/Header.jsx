@@ -3,12 +3,19 @@ import { useNavigate } from "react-router-dom";
 import authService from "../services/authService";
 import { toast } from "react-toastify";
 
+const getInitials = (name = "") => {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return (name.charAt(0) || "U").toUpperCase();
+};
+
 const Header = ({ title }) => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
   const user = authService.getCurrentUser();
   const name = user?.name || "Người dùng";
+  const roleName = user?.roleId === 1 ? "Admin" : "Nhân viên HR";
 
   const handleLogout = async () => {
     await authService.logout();
@@ -27,13 +34,20 @@ const Header = ({ title }) => {
           <div className="relative">
             <button
               onClick={() => setOpen((v) => !v)}
-              className="flex items-center gap-2 bg-orange-500 text-white px-3 py-1 rounded-xl"
+              className="flex items-center gap-3 bg-white border border-slate-200 px-3 py-1.5 rounded-full hover:bg-slate-50 transition shadow-sm"
               aria-expanded={open}
             >
-              <span className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white text-blue-600 flex items-center justify-center font-semibold">
-                {name.charAt(0).toUpperCase()}
-              </span>
-              <span className="hidden sm:inline max-w-40 truncate">{name}</span>
+              <div className="flex flex-col items-end hidden sm:flex">
+                <span className="text-sm font-semibold text-slate-800 leading-tight">{name}</span>
+                <span className="text-[10px] text-slate-500 font-medium">{roleName}</span>
+              </div>
+              {user?.image ? (
+                <img src={user.image} alt="Avatar" className="w-9 h-9 rounded-full object-cover shadow-inner" />
+              ) : (
+                <span className="w-9 h-9 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold text-sm shadow-inner">
+                  {getInitials(name)}
+                </span>
+              )}
             </button>
 
             {open && (

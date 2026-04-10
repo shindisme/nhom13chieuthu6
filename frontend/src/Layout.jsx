@@ -9,7 +9,9 @@ function Layout() {
     "/": "Dashboard",
     "/nhan-vien": "Quản lý nhân viên",
     "/cham-cong": "Chấm công",
-    "/bang-luong": "Bảng lương",
+    "/phong-ban": "Quản lý phòng ban",
+    "/quan-ly-luong": "Quản lý lương",
+    "/bang-luong": "Quản lý bảng lương",
     "/bao-cao": "Báo cáo",
     "/cai-dat": "Cài đặt",
   };

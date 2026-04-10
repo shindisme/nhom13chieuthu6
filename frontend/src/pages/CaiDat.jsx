@@ -2,6 +2,14 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import authService from "../services/authService";
 
+import nhanVienService from "../services/nhanVienService";
+
+const getInitials = (name = "") => {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return (name.charAt(0) || "U").toUpperCase();
+};
+
 /*  Icons   */
 const Icon = {
   User: () => (
@@ -104,9 +112,11 @@ function CaiDat() {
   const [profile, setProfile] = useState({
     name: user?.name || "",
     email: user?.email || "",
-    phone: "",
-    position: "HR Manager",
+    phone: user?.phone || "",
+    position: user?.roleId === 1 ? "Admin" : "Nhân viên",
   });
+
+  const [savingProfile, setSavingProfile] = useState(false);
 
   // state mat khau
   const [passwords, setPasswords] = useState({
@@ -138,18 +148,50 @@ function CaiDat() {
   });
 
   /*  handlers  */
-  const handleProfileSave = (e) => {
+  const handleProfileSave = async (e) => {
     e.preventDefault();
-    toast.success("Cập nhật thông tin tài khoản thành công!");
+    if (!profile.name) {
+      toast.warning("Họ tên không được để trống!");
+      return;
+    }
+
+    setSavingProfile(true);
+    try {
+      if (user?.maNv) {
+        // Cập nhật dùng API Nhân viên vì bạn không có quyền sửa backend auth
+        await nhanVienService.update(user.maNv, {
+          HoTen: profile.name,
+          SDT: profile.phone
+        });
+        
+        // Update local memory
+        user.name = profile.name;
+        user.phone = profile.phone;
+        localStorage.setItem("user", JSON.stringify(user));
+      }
+
+      toast.success("Cập nhật thông tin tài khoản thành công!");
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Cập nhật thông tin thất bại!");
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
-  const handlePasswordSave = (e) => {
+  const handlePasswordSave = async (e) => {
     e.preventDefault();
     if (!passwords.current) return toast.warning("Vui lòng nhập mật khẩu hiện tại");
     if (passwords.newPass.length < 6) return toast.warning("Mật khẩu mới phải có ít nhất 6 ký tự");
     if (passwords.newPass !== passwords.confirm) return toast.error("Xác nhận mật khẩu không khớp");
-    toast.success("Đổi mật khẩu thành công!");
-    setPasswords({ current: "", newPass: "", confirm: "" });
+
+    try {
+      const res = await authService.changePassword(passwords.current, passwords.newPass);
+      toast.success("Đổi mật khẩu thành công!");
+      setPasswords({ current: "", newPass: "", confirm: "" });
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Đổi mật khẩu thất bại!");
+    }
   };
 
   const handleNotifSave = () => toast.success("Cài đặt thông báo đã được lưu!");
@@ -169,7 +211,7 @@ function CaiDat() {
     <div className="flex flex-col gap-6">
       {/* Page intro */}
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-xl bg-linear-to-br from-[#0d1c42] to-[#1e40af] flex items-center justify-center text-white">
+        <div className="w-12 h-12 rounded-xl bg-[#0d1c42] flex items-center justify-center text-white shadow-md">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
               d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -211,9 +253,13 @@ function CaiDat() {
               <div className="bg-white rounded-3xl shadow-md p-6">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
                   <div className="relative shrink-0">
-                    <div className="w-20 h-20 rounded-full bg-linear-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
-                      {(profile.name || "U").charAt(0).toUpperCase()}
-                    </div>
+                    {user?.image ? (
+                      <img src={user.image} alt="Avatar" className="w-20 h-20 rounded-full object-cover shadow-md" />
+                    ) : (
+                      <div className="w-20 h-20 rounded-full bg-orange-500 flex items-center justify-center text-white text-3xl font-bold shadow-md">
+                        {getInitials(profile.name || "U")}
+                      </div>
+                    )}
                     <span className="absolute bottom-0 right-0 w-5 h-5 bg-emerald-400 rounded-full border-2 border-white" />
                   </div>
                   <div className="flex-1 text-center sm:text-left">
@@ -271,10 +317,10 @@ function CaiDat() {
                   <div className="flex justify-end pt-2">
                     <button
                       type="submit"
-                      className="px-6 py-2.5 bg-[#0d1c42] hover:bg-[#1e40af] text-white rounded-xl text-sm font-medium transition flex items-center gap-2"
+                      disabled={savingProfile}
+                      className="px-6 py-2.5 bg-slate-900 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white hover:bg-slate-800 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 disabled:opacity-50"
                     >
-                      <Icon.Check />
-                      Lưu thay đổi
+                      {savingProfile ? "Đang lưu..." : "Lưu thay đổi"}
                     </button>
                   </div>
                 </form>

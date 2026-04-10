@@ -1,5 +1,12 @@
 import { Sidebar, Menu, MenuItem } from "react-pro-sidebar";
 import { Link, useLocation } from "react-router-dom";
+import { Home, Users, Building, FileClock, Cog, CreditCard, Settings } from "lucide-react";
+
+const getInitials = (name = "") => {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return (name.charAt(0) || "U").toUpperCase();
+};
 
 function SideBar() {
   const location = useLocation();
@@ -50,6 +57,7 @@ function SideBar() {
               <MenuItem
                 active={location.pathname === "/"}
                 component={<Link to="/" />}
+                icon={<Home size={20} />}
               >
                 <span>Dashboard</span>
               </MenuItem>
@@ -62,18 +70,35 @@ function SideBar() {
               <MenuItem
                 active={location.pathname === "/nhan-vien"}
                 component={<Link to="/nhan-vien" />}
+                icon={<Users size={20} />}
               >
                 <span>Nhân viên</span>
               </MenuItem>
               <MenuItem
+                active={location.pathname === "/phong-ban"}
+                component={<Link to="/phong-ban" />}
+                icon={<Building size={20} />}
+              >
+                <span>Phòng ban</span>
+              </MenuItem>
+              <MenuItem
                 active={location.pathname === "/cham-cong"}
                 component={<Link to="/cham-cong" />}
+                icon={<FileClock size={20} />}
               >
                 <span>Chấm công</span>
               </MenuItem>
               <MenuItem
+                active={location.pathname === "/quan-ly-luong"}
+                component={<Link to="/quan-ly-luong" />}
+                icon={<Cog size={20} />}
+              >
+                <span>Quản lý lương</span>
+              </MenuItem>
+              <MenuItem
                 active={location.pathname === "/bang-luong"}
                 component={<Link to="/bang-luong" />}
+                icon={<CreditCard size={20} />}
               >
                 <span>Bảng lương</span>
               </MenuItem>
@@ -92,6 +117,7 @@ function SideBar() {
               <MenuItem
                 active={location.pathname === "/cai-dat"}
                 component={<Link to="/cai-dat" />}
+                icon={<Settings size={20} />}
               >
                 <span>Cài đặt</span>
               </MenuItem>
@@ -108,16 +134,20 @@ function SideBar() {
               }}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
-                  {user.name?.charAt(0).toUpperCase() ||
-                    user.email?.charAt(0).toUpperCase() ||
-                    "U"}
-                </div>
+                {user.image ? (
+                  <img src={user.image} alt="Avatar" className="w-10 h-10 rounded-full object-cover shadow-sm shrink-0" />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                    {getInitials(user.name || user.email || "Người dùng")}
+                  </div>
+                )}
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-white truncate">
                     {user.name || "Người dùng"}
                   </p>
-                  <p className="text-xs text-slate-400">HR Manager</p>
+                  <p className="text-xs text-slate-400">
+                    {user.roleId === 1 ? "Admin" : "Nhân viên HR"}
+                  </p>
                 </div>
               </div>
             </div>
