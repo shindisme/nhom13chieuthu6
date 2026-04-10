@@ -71,7 +71,7 @@ function Login() {
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-linear-to-br from-[#020617] to-[#0f172a]">
-      {/* GRID */}
+      {/* grid span */}
       <div
         className="absolute inset-0 grid"
         style={{
@@ -97,7 +97,7 @@ function Login() {
         ))}
       </div>
 
-      {/* LOGIN BOX */}
+      {/* login */}
       <form
         onSubmit={handleSubmit}
         className="

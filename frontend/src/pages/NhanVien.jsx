@@ -4,7 +4,6 @@ import NhanVienModal from "../components/NhanVienModal";
 import DeleteConfirm from "../components/DeleteConfirm";
 import { exportToExcel } from "../utils/exportUtils";
 
-// ham tien ich
 const AVATAR_COLORS = [
   "bg-indigo-600",
   "bg-emerald-600",
@@ -85,7 +84,7 @@ const getEmployeeStatus = (nv) => {
   return "Đang làm";
 };
 
-// badge trang thai
+//  Trạng thái
 const StatusBadge = ({ status }) => {
   const s = STATUS_MAP[status] || STATUS_MAP["Đang làm"];
   return (
@@ -96,22 +95,19 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-// Deleted modal code
 
-// card nhan vien
 function EmployeeCard({ nv, luongData, onEdit, onDelete }) {
   const status = getEmployeeStatus(nv);
   const avatarColor = getAvatarColor(nv.MaNV);
   const initials = getInitials(nv.HoTen);
   const yearsWorked = calcYearsWorked(nv.NgayBatDau);
 
-  // tinh luong
+  // tính lương
   const luong = luongData.find((l) => l.MaNV === nv.MaNV);
   const luongDisplay = formatSalary(luong);
 
   return (
     <div className="bg-white rounded-3xl shadow-md hover:shadow-lg transition-all duration-300 p-5 flex flex-col gap-4 group">
-      {/* Avatar + Info + Status */}
       <div className="flex items-start gap-3">
         <div className={`w-12 h-12 rounded-full ${avatarColor} flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm`}>
           {initials}
@@ -148,7 +144,7 @@ function EmployeeCard({ nv, luongData, onEdit, onDelete }) {
         )}
       </div>
 
-      {/* Stats - chi du lieu thuc tu DB */}
+      {/* Stats */}
       <div className="grid grid-cols-2 gap-x-4 gap-y-3 pt-2 border-t border-slate-100">
         <div>
           <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Lương</div>
@@ -160,7 +156,7 @@ function EmployeeCard({ nv, luongData, onEdit, onDelete }) {
         </div>
       </div>
 
-      {/* Hover actions */}
+      {/* Hover  */}
       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
         <button
           onClick={() => onEdit(nv)}
@@ -185,7 +181,6 @@ function EmployeeCard({ nv, luongData, onEdit, onDelete }) {
   );
 }
 
-// card them nhan vien moi
 function AddEmployeeCard({ onClick }) {
   return (
     <button
@@ -209,9 +204,7 @@ function AddEmployeeCard({ onClick }) {
   );
 }
 
-// trang chinh nhan vien
 const NhanVien = () => {
-  // goi api lay du lieu
   const { data: employeeRes, loading, error, refetch } = useFetch("/nhan-vien");
   const { data: deptRes } = useFetch("/phong-ban");
   const { data: luongRes } = useFetch("/luong");
@@ -227,7 +220,6 @@ const NhanVien = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [viewMode, setViewMode] = useState("grid"); // grid | list
 
-  // xu ly sau khi luu/xoa
   const handleSaved = () => {
     setModal(null);
     refetch();
@@ -238,7 +230,7 @@ const NhanVien = () => {
     refetch();
   };
 
-  // dem nhan vien theo phong ban
+  // đếm nhân viên theo phòng ban
   const deptCounts = {};
   employees.forEach((nv) => {
     const dept = nv.TenPB || "Khác";
@@ -254,7 +246,7 @@ const NhanVien = () => {
     })),
   ];
 
-  // loc danh sach
+  // filter
   const filtered = employees.filter((nv) => {
     const matchSearch = nv.HoTen?.toLowerCase().includes(search.toLowerCase());
     const matchTab =
@@ -298,7 +290,7 @@ const NhanVien = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* ── Page Title + Actions  */}
+      {/*  Page Title + Actions  */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div>
           <p className="text-slate-500 mt-1 text-sm">
@@ -325,7 +317,7 @@ const NhanVien = () => {
         </div>
       </div>
 
-      {/* ── Tabs + Search Row  */}
+      {/*  Tabs + Search   */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         {/* Department tabs */}
         <div className="flex flex-wrap gap-2">

@@ -89,7 +89,6 @@ function Dashboard() {
     return Object.entries(counts).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   }, [nhanViens]);
 
-  // Nhân viên mới nhất
   const newestEmployees = useMemo(() => {
     return [...nhanViens]
       .sort((a, b) => new Date(b.NgayBatDau || 0) - new Date(a.NgayBatDau || 0))
@@ -116,7 +115,7 @@ function Dashboard() {
       return (value / 1e9).toFixed(1).replace(".", ",") + " tỷ đ";
     }
     if (value >= 1e6) {
-      return (value / 1e6).toFixed(1).replace(".", ",") + " tr đ";
+      return (value / 1e6).toFixed(1).replace(".", ",") + " tr. đ";
     }
     return formatMoney(value);
   };
@@ -182,10 +181,10 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* Main Content  */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
-        {/* Left Col: Nhan Vien Moi Nhat */}
+        {/* Left Col: Nhân viên mới nhất */}
         <div className="xl:col-span-2 bg-white rounded-3xl shadow-md flex flex-col overflow-hidden">
           <div className="p-6 bg-slate-50/50 flex justify-between items-center shadow-inner">
             <h3 className="text-lg font-bold text-slate-900">Nhân viên mới nhất</h3>
@@ -241,7 +240,7 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* Right Col: Co cau phong ban */}
+        {/* Right Col: Cơ cấu phòng ban */}
         <div className="bg-white rounded-3xl shadow-md flex flex-col overflow-hidden">
           <div className="p-6 bg-slate-50/50 shadow-inner">
             <h3 className="text-lg font-bold text-slate-900">Cơ cấu phòng ban</h3>
@@ -252,7 +251,6 @@ function Dashboard() {
             ) : (
               deptStats.map((dept, idx) => {
                 const percent = totalEmployees > 0 ? ((dept.value / totalEmployees) * 100).toFixed(0) : 0;
-                // Flat colors only
                 const barColors = ["bg-indigo-500", "bg-emerald-500", "bg-amber-500", "bg-rose-500", "bg-cyan-500", "bg-blue-500", "bg-violet-500"];
                 const progressColor = barColors[idx % barColors.length];
 
