@@ -37,7 +37,7 @@ const Header = ({ title }) => {
               className="flex items-center gap-3 bg-white border border-slate-200 px-3 py-1.5 rounded-full hover:bg-slate-50 transition shadow-sm"
               aria-expanded={open}
             >
-              <div className="flex flex-col items-end hidden sm:flex">
+              <div className="hidden sm:flex flex-col items-end">
                 <span className="text-sm font-semibold text-slate-800 leading-tight">{name}</span>
                 <span className="text-[10px] text-slate-500 font-medium">{roleName}</span>
               </div>

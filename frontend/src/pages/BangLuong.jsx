@@ -58,7 +58,6 @@ function BangLuong() {
         : basicSalary + allowance;
 
       const name = nv.HoTen || "Unknown";
-      const year = bl.Nam || nam;
 
       return {
         id: bl.MaBangLuong || `temp-${nv.MaNV}`,

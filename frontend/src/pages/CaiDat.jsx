@@ -186,7 +186,7 @@ function CaiDat() {
     if (passwords.newPass !== passwords.confirm) return toast.error("Xác nhận mật khẩu không khớp");
 
     try {
-      const res = await authService.changePassword(passwords.current, passwords.newPass);
+      await authService.changePassword(passwords.current, passwords.newPass);
       toast.success("Đổi mật khẩu thành công!");
       setPasswords({ current: "", newPass: "", confirm: "" });
     } catch (error) {
@@ -209,7 +209,6 @@ function CaiDat() {
   /*  render  */
   return (
     <div className="flex flex-col gap-6">
-      {/* Page intro */}
       <div className="flex items-center gap-4">
         <div className="w-12 h-12 rounded-xl bg-[#0d1c42] flex items-center justify-center text-white shadow-md">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -224,10 +223,9 @@ function CaiDat() {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
-        {/*  Sidebar tabs  */}
         <div className="lg:w-56 shrink-0">
           <nav className="bg-white rounded-3xl shadow-md overflow-hidden p-2 flex lg:flex-col gap-1">
-            {TABS.map(({ id, label, icon: IconComp }) => (
+            {TABS.map(({ id, label, icon }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
@@ -237,7 +235,7 @@ function CaiDat() {
                   }`}
               >
                 <span className={activeTab === id ? "text-white" : "text-slate-400"}>
-                  <IconComp />
+                  {icon()}
                 </span>
                 <span className="hidden sm:inline lg:inline">{label}</span>
               </button>
@@ -249,7 +247,6 @@ function CaiDat() {
 
           {activeTab === "profile" && (
             <>
-              {/* Avatar card */}
               <div className="bg-white rounded-3xl shadow-md p-6">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
                   <div className="relative shrink-0">
