@@ -1,7 +1,4 @@
 import db from "../config/db.js";
-
-
-// Lấy toàn bộ danh sách
 export const getAllNhanVienModel = async () => {
     const connection = await db;
     const query = `
@@ -23,7 +20,6 @@ export const getAllNhanVienModel = async () => {
     return rows;
 };
 
-// Lấy chi tiết theo ID
 export const getNhanVienByIdModel = async (id) => {
     const connection = await db;
     const query = `
@@ -47,9 +43,6 @@ export const getNhanVienByIdModel = async (id) => {
     const [rows] = await connection.execute(query, [id]);
     return rows[0];
 };
-
-// Các hàm create, update, delete giữ nguyên như cũ...
-
 
 export const createNhanVienModel = async (data) => {
     const connection = await db;

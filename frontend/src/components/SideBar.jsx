@@ -143,10 +143,10 @@ function SideBar() {
                 )}
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-white truncate">
-                    {user.name || "Người dùng"}
+                    {user.name || user.email || "Người dùng"}
                   </p>
                   <p className="text-xs text-slate-400">
-                    {user.roleId === 1 ? "Admin" : "Nhân viên HR"}
+                    {user.roleId === 1 ? "Admin" : "Nhân viên"}
                   </p>
                 </div>
               </div>

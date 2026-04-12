@@ -1,10 +1,45 @@
 import * as NhanVienModel from "../models/nhanvien.model.js";
+import { createTaiKhoanModel } from "../models/auth.model.js";
+import db from "../config/db.js";
+import bcrypt from "bcrypt";
 const formatToMySQLDate = (dateStr) => {
     if (!dateStr || typeof dateStr !== "string") return null;
     if (dateStr.includes('T')) return dateStr.split('T')[0];
     if (dateStr.includes('/')) return dateStr.split('/').reverse().join('-');
 
     return dateStr;
+};
+const generateUniqueEmail = async (hoTen) => {
+    const cleanName = hoTen.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const parts = cleanName.trim().split(/\s+/);
+
+    let baseEmail = "";
+    if (parts.length < 2) {
+        baseEmail = parts[0];
+    } else {
+        const ten = parts.pop();
+        const hoDem = parts.join("");
+        baseEmail = `${ten}.${hoDem}`;
+    }
+
+    const connection = await db;
+    let finalEmail = `${baseEmail}@gmail.com`;
+    let count = 1;
+
+    while (true) {
+        const [rows] = await connection.execute(
+            "SELECT COUNT(*) as count FROM taikhoan WHERE Email = ?",
+            [finalEmail]
+        );
+
+        if (rows[0].count === 0) {
+            break;
+        }
+        finalEmail = `${baseEmail}${count}@gmail.com`;
+        count++;
+    }
+
+    return finalEmail;
 };
 
 export const getAllNhanVien = async (req, res) => {
@@ -40,6 +75,8 @@ export const createNhanVien = async (req, res) => {
     }
 
     try {
+        const autoEmail = await generateUniqueEmail(HoTen);
+
         const result = await NhanVienModel.createNhanVienModel({
             HoTen: HoTen.trim(),
             GioiTinh: (GioiTinh === 'Nu' || GioiTinh === 'Nữ') ? 'Nữ' : 'Nam',
@@ -51,15 +88,29 @@ export const createNhanVien = async (req, res) => {
             MaCV: MaCV || null
         });
 
+        const newMaNV = result.insertId;
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash("123456", salt);
+        await createTaiKhoanModel({
+            Email: autoEmail,
+            MatKhau: hashedPassword,
+            MaNV: newMaNV,
+            role: 0
+        });
+
         res.status(201).json({
             success: true,
-            message: "Thêm nhân viên thành công",
-            insertId: result.insertId
+            message: "Thêm nhân viên và tạo tài khoản thành công!",
+            data: {
+                MaNV: newMaNV,
+                EmailCapPhat: autoEmail
+            }
         });
+
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: "Lỗi khi thêm mới nhân viên",
+            message: "Lỗi hệ thống khi tạo nhân viên",
             error: error.message
         });
     }
