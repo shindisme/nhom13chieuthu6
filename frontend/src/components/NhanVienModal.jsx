@@ -27,16 +27,6 @@ function NhanVienModal({ mode, record, departments, onClose, onSaved }) {
     e.preventDefault();
     if (!form.HoTen.trim()) return toast.warning("Vui lòng nhập họ tên");
 
-    // if (!isEdit) {
-    //   if (!form.Email || !form.Email.trim()) {
-    //     return toast.warning("Vui lòng nhập Email cho nhân viên");
-    //   }
-    //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    //   if (!emailRegex.test(form.Email.trim())) {
-    //     return toast.warning("Email không hợp lệ");
-    //   }
-    // }
-
     if (!form.MaPB) return toast.warning("Vui lòng chọn phòng ban");
 
     try {
@@ -46,7 +36,7 @@ function NhanVienModal({ mode, record, departments, onClose, onSaved }) {
       if (isEdit) {
         // delete payload.Email;
         // await nhanVienService.update(record.MaNV, payload);
-        // toast.success("Cập nhật nhân viên thành công");
+        toast.success("Cập nhật nhân viên thành công");
       } else {
         await nhanVienService.insert(payload);
         toast.success("Thêm nhân viên thành công");
@@ -61,7 +51,7 @@ function NhanVienModal({ mode, record, departments, onClose, onSaved }) {
   };
 
   const inputCls =
-    "border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500";
+    "border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 bg-gray-500";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -91,10 +81,10 @@ function NhanVienModal({ mode, record, departments, onClose, onSaved }) {
           </div>
 
           {/* Email */}
-          {/* {!isEdit && (
-            <div className="flex flex-col gap-1.5">
+          {isEdit && (
+            <div className="flex flex-col gap-1.5 ">
               <label className="text-sm font-semibold text-slate-700">
-                Email <span className="text-red-500">*</span>
+                Email
               </label>
               <input
                 name="Email"
@@ -103,9 +93,10 @@ function NhanVienModal({ mode, record, departments, onClose, onSaved }) {
                 onChange={handleChange}
                 className={inputCls}
                 placeholder="example@gmail.com"
+                disabled={isEdit}
               />
             </div>
-          )} */}
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
