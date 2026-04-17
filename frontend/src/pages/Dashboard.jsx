@@ -96,7 +96,7 @@ function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 flex flex-col gap-6">
+    <div className="min-h-screen p-6 flex flex-col gap-6">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-7 rounded-4xl shadow-md">
         <div>
