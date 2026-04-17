@@ -15,7 +15,15 @@ export const getAllTaiKhoanModel = async () => {
 };
 export const findUserByEmail = async (email) => {
     const connection = await db;
-    const query = `SELECT MaTK, Email, MatKhau, role, MaNV FROM taikhoan WHERE Email = ?`;
+    const query = `
+        SELECT tk.MaTK, tk.Email, tk.MatKhau, tk.role, tk.MaNV,
+               nv.HoTen, nv.SDT, nv.GioiTinh, nv.MaPB,
+               pb.TenPB
+        FROM taikhoan tk
+        LEFT JOIN nhanvien nv ON tk.MaNV = nv.MaNV
+        LEFT JOIN phongban pb ON nv.MaPB = pb.MaPB
+        WHERE tk.Email = ?
+    `;
     return connection.execute(query, [email]);
 };
 export const createTaiKhoanModel = async (data) => {

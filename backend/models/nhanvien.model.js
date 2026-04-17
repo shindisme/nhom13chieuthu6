@@ -12,9 +12,11 @@ export const getAllNhanVienModel = async () => {
             DATE_FORMAT(nv.NgayBatDau, '%Y-%m-%d') as NgayBatDau,
             nv.MaPB, 
             nv.MaCV,
-            pb.TenPB 
+            pb.TenPB,
+            tk.Email
         FROM nhanvien nv
         LEFT JOIN phongban pb ON nv.MaPB = pb.MaPB
+        LEFT JOIN taikhoan tk ON nv.MaNV = tk.MaNV
     `;
     const [rows] = await connection.execute(query);
     return rows;
@@ -34,10 +36,12 @@ export const getNhanVienByIdModel = async (id) => {
             nv.MaPB, 
             nv.MaCV,
             pb.TenPB, 
-            cv.TenCV
+            cv.TenCV,
+            tk.Email
         FROM nhanvien nv
         LEFT JOIN phongban pb ON nv.MaPB = pb.MaPB
         LEFT JOIN chucvu cv ON nv.MaCV = cv.MaCV
+        LEFT JOIN taikhoan tk ON nv.MaNV = tk.MaNV
         WHERE nv.MaNV = ?
     `;
     const [rows] = await connection.execute(query, [id]);

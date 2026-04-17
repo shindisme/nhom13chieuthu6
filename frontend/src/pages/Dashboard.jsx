@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import useFetch from "../hooks/useFetch";
 import authService from "../services/authService";
 import { Link } from "react-router-dom";
+import AvatarInitials from "../components/common/AvatarInitials";
+import { formatShortMoney } from "../utils/helpers";
 
 const STATUS_MAP = {
   "Đang làm": { bg: "bg-emerald-50", text: "text-emerald-600", dot: "bg-emerald-500", border: "border-emerald-100" },
@@ -15,30 +17,7 @@ const getEmployeeStatus = (nv) => {
   return "Đang làm";
 };
 
-const AVATAR_COLORS = [
-  "bg-indigo-600",
-  "bg-emerald-600",
-  "bg-orange-500",
-  "bg-rose-500",
-  "bg-cyan-600",
-  "bg-violet-600",
-  "bg-amber-600",
-  "bg-teal-600",
-];
-
-const getAvatarColor = (id) => AVATAR_COLORS[(id ?? 0) % AVATAR_COLORS.length];
-
-const getInitials = (name = "") => {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  return (name.charAt(0) || "U").toUpperCase();
-};
-
-const formatMoney = (value) =>
-  value.toLocaleString("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).replace("₫", "đ");
-
 function Dashboard() {
-  const user = authService.getCurrentUser();
 
   const { data: nvRes, loading: loadingNv } = useFetch("/nhan-vien");
   const { data: bgRes, loading: loadingBg } = useFetch("/bang-luong");
@@ -76,8 +55,14 @@ function Dashboard() {
 
   const presentPercentage = totalEmployees > 0 ? ((presentToday / totalEmployees) * 100).toFixed(1) : 0;
 
-  // Chưa ghi nhận / Vắng
-  const missingToday = totalEmployees > 0 ? totalEmployees - presentToday : 0;
+  // Đi trễ hôm nay (check-in sau 8:05)
+  const lateToday = useMemo(() => {
+    const todayCheckins = chamCongs.filter(cc => cc.CheckIn && cc.CheckIn.startsWith(todayStr));
+    return todayCheckins.filter(cc => {
+      const d = new Date(cc.CheckIn);
+      return d.getHours() > 8 || (d.getHours() === 8 && d.getMinutes() > 5);
+    }).length;
+  }, [chamCongs, todayStr]);
 
   // Cơ cấu phòng ban
   const deptStats = useMemo(() => {
@@ -109,16 +94,6 @@ function Dashboard() {
       </div>
     );
   }
-
-  const formatShortMoney = (value) => {
-    if (value >= 1e9) {
-      return (value / 1e9).toFixed(1).replace(".", ",") + " tỷ đ";
-    }
-    if (value >= 1e6) {
-      return (value / 1e6).toFixed(1).replace(".", ",") + " tr. đ";
-    }
-    return formatMoney(value);
-  };
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 flex flex-col gap-6">
@@ -162,11 +137,16 @@ function Dashboard() {
 
         <div className="bg-orange-200 p-6 rounded-4xl shadow-md text-left relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-[5px]"></div>
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">Chưa ghi nhận / Vắng</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">Đi trễ hôm nay</p>
           <div className="flex items-end justify-between">
-            <h2 className="text-4xl font-bold text-slate-900">{missingToday}</h2>
+            <h2 className="text-4xl font-bold text-slate-900">{lateToday}</h2>
             <div className="text-amber-600 text-sm font-bold flex items-center gap-1">
-              Hôm nay
+              {lateToday > 0 ? (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  Cần lưu ý
+                </>
+              ) : "Tốt"}
             </div>
           </div>
         </div>
@@ -211,9 +191,7 @@ function Dashboard() {
                       <tr key={nv.MaNV} className="hover:bg-slate-50 transition">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3.5">
-                            <div className={`w-10 h-10 rounded-xl ${getAvatarColor(nv.MaNV)} text-white flex items-center justify-center font-bold text-sm shadow-sm`}>
-                              {getInitials(nv.HoTen)}
-                            </div>
+                            <AvatarInitials name={nv.HoTen} size="md" id={nv.MaNV} />
                             <div>
                               <p className="font-bold text-slate-900">{nv.HoTen}</p>
                               <p className="text-xs text-slate-500 font-medium mt-0.5">{nv.SDT || "Chưa cập nhật SĐT"}</p>

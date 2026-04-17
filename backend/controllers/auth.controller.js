@@ -65,8 +65,11 @@ export const login = async (req, res) => {
             roleId: user.role,
             user: {
                 id: user.MaTK,
+                maNv: user.MaNV,
                 email: user.Email,
-                name: user.HoTen || user.TenTK || "Người dùng",
+                name: user.HoTen || "Người dùng",
+                phone: user.SDT || "",
+                department: user.TenPB || "",
             },
         });
     } catch (error) {

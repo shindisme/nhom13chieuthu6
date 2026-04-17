@@ -14,6 +14,7 @@ function NhanVienModal({ mode, record, departments, onClose, onSaved }) {
     NgayBatDau: record?.NgayBatDau ? new Date(record.NgayBatDau).toISOString().split("T")[0] : "",
     MaPB: record?.MaPB ?? "",
     MaCV: record?.MaCV ?? "",
+    Email: record?.Email ?? "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -25,15 +26,29 @@ function NhanVienModal({ mode, record, departments, onClose, onSaved }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.HoTen.trim()) return toast.warning("Vui lòng nhập họ tên");
+
+    if (!isEdit) {
+      if (!form.Email || !form.Email.trim()) {
+        return toast.warning("Vui lòng nhập Email cho nhân viên");
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(form.Email.trim())) {
+        return toast.warning("Email không hợp lệ");
+      }
+    }
+
     if (!form.MaPB) return toast.warning("Vui lòng chọn phòng ban");
 
     try {
       setSaving(true);
+      const payload = { ...form };
+      // Chỉ gửi email khi thêm mới
       if (isEdit) {
-        await nhanVienService.update(record.MaNV, form);
+        delete payload.Email;
+        await nhanVienService.update(record.MaNV, payload);
         toast.success("Cập nhật nhân viên thành công");
       } else {
-        await nhanVienService.insert(form);
+        await nhanVienService.insert(payload);
         toast.success("Thêm nhân viên thành công");
       }
       onSaved();
@@ -45,11 +60,14 @@ function NhanVienModal({ mode, record, departments, onClose, onSaved }) {
     }
   };
 
+  const inputCls =
+    "border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden max-h-[90vh] flex flex-col">
         {/* tieu de modal */}
-        <div className="bg-[#0d1c42]  px-6 py-4 flex items-center justify-between">
+        <div className="bg-[#0d1c42] px-6 py-4 flex items-center justify-between shrink-0">
           <h2 className="text-white font-semibold text-base">
             {isEdit ? "Chỉnh sửa nhân viên" : "Thêm nhân viên mới"}
           </h2>
@@ -58,7 +76,7 @@ function NhanVienModal({ mode, record, departments, onClose, onSaved }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4 overflow-y-auto">
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-semibold text-slate-700">
               Họ tên <span className="text-red-500">*</span>
@@ -67,10 +85,27 @@ function NhanVienModal({ mode, record, departments, onClose, onSaved }) {
               name="HoTen"
               value={form.HoTen}
               onChange={handleChange}
-              className="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+              className={inputCls}
               placeholder="Nhập họ tên"
             />
           </div>
+
+          {/* Email */}
+          {!isEdit && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-semibold text-slate-700">
+                Email <span className="text-red-500">*</span>
+              </label>
+              <input
+                name="Email"
+                type="email"
+                value={form.Email}
+                onChange={handleChange}
+                className={inputCls}
+                placeholder="example@gmail.com"
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
@@ -79,7 +114,7 @@ function NhanVienModal({ mode, record, departments, onClose, onSaved }) {
                 name="GioiTinh"
                 value={form.GioiTinh}
                 onChange={handleChange}
-                className="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                className={inputCls}
               >
                 <option value="Nam">Nam</option>
                 <option value="Nữ">Nữ</option>
@@ -92,7 +127,7 @@ function NhanVienModal({ mode, record, departments, onClose, onSaved }) {
                 name="NgaySinh"
                 value={form.NgaySinh}
                 onChange={handleChange}
-                className="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                className={inputCls}
               />
             </div>
           </div>
@@ -104,7 +139,7 @@ function NhanVienModal({ mode, record, departments, onClose, onSaved }) {
                 name="SDT"
                 value={form.SDT}
                 onChange={handleChange}
-                className="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                className={inputCls}
                 placeholder="Số điện thoại"
               />
             </div>
@@ -115,7 +150,7 @@ function NhanVienModal({ mode, record, departments, onClose, onSaved }) {
                 name="NgayBatDau"
                 value={form.NgayBatDau}
                 onChange={handleChange}
-                className="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                className={inputCls}
               />
             </div>
           </div>
@@ -126,7 +161,7 @@ function NhanVienModal({ mode, record, departments, onClose, onSaved }) {
               name="DiaChi"
               value={form.DiaChi}
               onChange={handleChange}
-              className="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+              className={inputCls}
               placeholder="Địa chỉ"
             />
           </div>
@@ -139,7 +174,7 @@ function NhanVienModal({ mode, record, departments, onClose, onSaved }) {
               name="MaPB"
               value={form.MaPB}
               onChange={handleChange}
-              className="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+              className={inputCls}
             >
               <option value="">-- Chọn phòng ban --</option>
               {departments.map((pb) => (

@@ -2,12 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import authService from "../services/authService";
 import { toast } from "react-toastify";
-
-const getInitials = (name = "") => {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  return (name.charAt(0) || "U").toUpperCase();
-};
+import AvatarInitials from "./common/AvatarInitials";
 
 const Header = ({ title }) => {
   const [open, setOpen] = useState(false);
@@ -41,13 +36,13 @@ const Header = ({ title }) => {
                 <span className="text-sm font-semibold text-slate-800 leading-tight">{name}</span>
                 <span className="text-[10px] text-slate-500 font-medium">{roleName}</span>
               </div>
-              {user?.image ? (
-                <img src={user.image} alt="Avatar" className="w-9 h-9 rounded-full object-cover shadow-inner" />
-              ) : (
-                <span className="w-9 h-9 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold text-sm shadow-inner">
-                  {getInitials(name)}
-                </span>
-              )}
+              <AvatarInitials
+                name={name}
+                id={user?.maNv || user?.id}
+                image={user?.image}
+                size="sm"
+                className="w-9! h-9! bg-orange-500!"
+              />
             </button>
 
             {open && (

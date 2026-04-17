@@ -9,49 +9,13 @@ const formatToMySQLDate = (dateStr) => {
 
     return dateStr;
 };
-const generateUniqueEmail = async (hoTen) => {
-    const cleanName = hoTen.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-    const parts = cleanName.trim().split(/\s+/);
-
-    let baseEmail = "";
-    if (parts.length < 2) {
-        baseEmail = parts[0];
-    } else {
-        const ten = parts.pop();
-        const hoDem = parts.join("");
-        baseEmail = `${ten}.${hoDem}`;
-    }
-
-    const connection = await db;
-    let finalEmail = `${baseEmail}@gmail.com`;
-    let count = 1;
-
-    while (true) {
-        const [rows] = await connection.execute(
-            "SELECT COUNT(*) as count FROM taikhoan WHERE Email = ?",
-            [finalEmail]
-        );
-
-        if (rows[0].count === 0) {
-            break;
-        }
-        finalEmail = `${baseEmail}${count}@gmail.com`;
-        count++;
-    }
-
-    return finalEmail;
-};
 
 export const getAllNhanVien = async (req, res) => {
     try {
         const data = await NhanVienModel.getAllNhanVienModel();
         res.status(200).json({ success: true, data });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Lỗi lấy danh sách nhân viên",
-            error: error.message
-        });
+        res.status(500).json({ success: false, message: "Lỗi hệ thống", error: error.message });
     }
 };
 
@@ -68,14 +32,34 @@ export const getNhanVienById = async (req, res) => {
 };
 
 export const createNhanVien = async (req, res) => {
-    const { HoTen, GioiTinh, NgaySinh, SDT, DiaChi, NgayBatDau, MaPB, MaCV } = req.body;
+    const { HoTen, GioiTinh, NgaySinh, SDT, DiaChi, NgayBatDau, MaPB, MaCV, Email } = req.body;
 
     if (!HoTen?.trim()) {
         return res.status(400).json({ success: false, message: "Họ tên không được để trống" });
     }
 
+    if (!Email || !Email.trim()) {
+        return res.status(400).json({ success: false, message: "Email không được để trống" });
+    }
+
     try {
-        const autoEmail = await generateUniqueEmail(HoTen);
+        // Kiểm tra email hợp lệ
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(Email.trim())) {
+            return res.status(400).json({ success: false, message: "Email không hợp lệ" });
+        }
+
+        // Kiểm tra email trùng
+        const connection = await db;
+        const [rows] = await connection.execute(
+            "SELECT COUNT(*) as count FROM taikhoan WHERE Email = ?",
+            [Email.trim()]
+        );
+        if (rows[0].count > 0) {
+            return res.status(400).json({ success: false, message: "Email đã tồn tại trong hệ thống" });
+        }
+
+        const autoEmail = Email.trim();
 
         const result = await NhanVienModel.createNhanVienModel({
             HoTen: HoTen.trim(),
@@ -118,13 +102,35 @@ export const createNhanVien = async (req, res) => {
 
 export const updateNhanVien = async (req, res) => {
     const { id } = req.params;
+    const { HoTen, GioiTinh, NgaySinh, SDT, DiaChi, NgayBatDau, MaPB, MaCV, Email } = req.body;
     try {
+        if (!Email || !Email.trim()) {
+            return res.status(400).json({ success: false, message: "Email không được để trống" });
+        }
+        
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(Email.trim())) {
+            return res.status(400).json({ success: false, message: "Email không hợp lệ" });
+        }
+        
+        const connection = await db;
+        const [rows] = await connection.execute(
+            "SELECT COUNT(*) as count FROM taikhoan WHERE Email = ? AND MaNV != ?",
+            [Email.trim(), id]
+        );
+        if (rows[0].count > 0) {
+            return res.status(400).json({ success: false, message: "Email đã tồn tại trong hệ thống" });
+        }
+
         const updateData = {
-            ...req.body,
-            NgaySinh: formatToMySQLDate(req.body.NgaySinh),
-            NgayBatDau: formatToMySQLDate(req.body.NgayBatDau),
-            MaPB: req.body.MaPB || null,
-            MaCV: req.body.MaCV || null
+            HoTen: HoTen?.trim(),
+            GioiTinh: (GioiTinh === 'Nu' || GioiTinh === 'Nữ') ? 'Nữ' : 'Nam',
+            NgaySinh: formatToMySQLDate(NgaySinh),
+            SDT: SDT || null,
+            DiaChi: DiaChi || null,
+            NgayBatDau: formatToMySQLDate(NgayBatDau),
+            MaPB: MaPB || null,
+            MaCV: MaCV || null
         };
 
         const result = await NhanVienModel.updateNhanVienModel(id, updateData);
@@ -132,6 +138,8 @@ export const updateNhanVien = async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ success: false, message: "Nhân viên không tồn tại" });
         }
+
+        await connection.execute("UPDATE taikhoan SET Email = ? WHERE MaNV = ?", [Email.trim(), id]);
 
         res.status(200).json({
             success: true,

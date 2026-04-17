@@ -1,28 +1,11 @@
 import { useMemo, useState } from "react";
 import useFetch from "../hooks/useFetch";
 import { exportToExcel } from "../utils/exportUtils";
+import { removeAccents } from "../utils/helpers";
+import AvatarInitials from "../components/common/AvatarInitials";
 
 const formatMoney = (value) =>
   value.toLocaleString("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).replace("₫", "đ");
-
-const getInitials = (name = "") => {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  return (name.charAt(0) || "U").toUpperCase();
-};
-
-const AVATAR_COLORS = [
-  "bg-indigo-600",
-  "bg-emerald-600",
-  "bg-orange-500",
-  "bg-rose-500",
-  "bg-cyan-600",
-  "bg-violet-600",
-  "bg-amber-600",
-  "bg-teal-600",
-];
-
-const getAvatarColor = (id) => AVATAR_COLORS[(id ?? 0) % AVATAR_COLORS.length];
 
 function BangLuong() {
   const [search, setSearch] = useState("");
@@ -62,7 +45,7 @@ function BangLuong() {
       return {
         id: bl.MaBangLuong || `temp-${nv.MaNV}`,
         maNv: nv.MaNV,
-        avatar: getInitials(name),
+        avatar: null,
         name,
         code: `NV-${String(nv.MaNV).padStart(3, '0')}`,
         department: nv.TenPB || "Khác",
@@ -76,11 +59,12 @@ function BangLuong() {
   }, [bgRes, nvRes, luongRes, nam]);
 
   const filteredRows = useMemo(() => {
-    return rawRows.filter((row) =>
-      [row.name, row.department, row.code].some((value) =>
-        value.toLowerCase().includes(search.toLowerCase())
-      )
-    );
+    return rawRows.filter((row) => {
+      const term = removeAccents(search);
+      return [row.name, row.department, row.code].some((value) =>
+        value && removeAccents(value).includes(term)
+      );
+    });
   }, [search, rawRows]);
 
   const totalSalary = rawRows.reduce((sum, row) => sum + (row.netSalary || 0), 0);
@@ -206,9 +190,7 @@ function BangLuong() {
                   <tr key={row.id} className="bg-white rounded-3xl text-sm text-slate-700 shadow-sm hover:shadow-md transition-shadow">
                     <td className="whitespace-nowrap rounded-l-3xl bg-white px-4 py-4">
                       <div className="flex items-center gap-3">
-                        <div className={`flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold text-white ${getAvatarColor(row.maNv)}`}>
-                          {row.avatar}
-                        </div>
+                        <AvatarInitials name={row.name} size="lg" id={row.maNv} />
                         <div>
                           <div className="font-semibold text-slate-900">{row.name}</div>
                           <div className="text-xs text-slate-500">{row.code}</div>

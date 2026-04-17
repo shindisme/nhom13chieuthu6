@@ -1,14 +1,8 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
 import authService from "../services/authService";
-
 import nhanVienService from "../services/nhanVienService";
-
-const getInitials = (name = "") => {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  return (name.charAt(0) || "U").toUpperCase();
-};
+import AvatarInitials from "../components/common/AvatarInitials";
 
 /*  Icons   */
 const Icon = {
@@ -22,18 +16,6 @@ const Icon = {
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
         d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-    </svg>
-  ),
-  Bell: () => (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-    </svg>
-  ),
-  Shield: () => (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
     </svg>
   ),
   Database: () => (
@@ -95,11 +77,10 @@ function Field({ label, hint, children }) {
 const inputCls =
   "w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500 transition";
 
-/*  Tabs  */
+/*  Tabs */
 const TABS = [
   { id: "profile", label: "Tài khoản", icon: Icon.User },
   { id: "security", label: "Bảo mật", icon: Icon.Lock },
-  { id: "notifications", label: "Thông báo", icon: Icon.Bell },
   { id: "system", label: "Hệ thống", icon: Icon.Database },
 ];
 
@@ -125,16 +106,7 @@ function CaiDat() {
     confirm: "",
   });
   const [showPw, setShowPw] = useState({ current: false, newPass: false, confirm: false });
-
-  // state thong bao
-  const [notifs, setNotifs] = useState({
-    emailLogin: true,
-    emailPayroll: true,
-    emailAttendance: false,
-    browserPush: true,
-    weeklyReport: true,
-    monthlyReport: false,
-  });
+  const [savingPassword, setSavingPassword] = useState(false);
 
   // state he thong
   const [sysSettings, setSysSettings] = useState({
@@ -147,6 +119,9 @@ function CaiDat() {
     currency: "VND",
   });
 
+  // RTL state
+  const [rtl, setRtl] = useState(() => localStorage.getItem("rtl") === "true");
+
   /*  handlers  */
   const handleProfileSave = async (e) => {
     e.preventDefault();
@@ -158,16 +133,14 @@ function CaiDat() {
     setSavingProfile(true);
     try {
       if (user?.maNv) {
-        // Cập nhật dùng API Nhân viên vì bạn không có quyền sửa backend auth
         await nhanVienService.update(user.maNv, {
           HoTen: profile.name,
           SDT: profile.phone
         });
-        
+
         // Update local memory
-        user.name = profile.name;
-        user.phone = profile.phone;
-        localStorage.setItem("user", JSON.stringify(user));
+        const updatedUser = { ...user, name: profile.name, phone: profile.phone };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
       }
 
       toast.success("Cập nhật thông tin tài khoản thành công!");
@@ -185,17 +158,26 @@ function CaiDat() {
     if (passwords.newPass.length < 6) return toast.warning("Mật khẩu mới phải có ít nhất 6 ký tự");
     if (passwords.newPass !== passwords.confirm) return toast.error("Xác nhận mật khẩu không khớp");
 
+    setSavingPassword(true);
     try {
       await authService.changePassword(passwords.current, passwords.newPass);
       toast.success("Đổi mật khẩu thành công!");
       setPasswords({ current: "", newPass: "", confirm: "" });
     } catch (error) {
       toast.error(error?.response?.data?.message || "Đổi mật khẩu thất bại!");
+    } finally {
+      setSavingPassword(false);
     }
   };
 
-  const handleNotifSave = () => toast.success("Cài đặt thông báo đã được lưu!");
   const handleSystemSave = () => toast.success("Cài đặt hệ thống đã được lưu!");
+
+  const handleRtlToggle = (value) => {
+    setRtl(value);
+    localStorage.setItem("rtl", value);
+    // Dispatch custom event để Layout lắng nghe
+    window.dispatchEvent(new Event("rtlChanged"));
+  };
 
   const dayLabels = { Mon: "T2", Tue: "T3", Wed: "T4", Thu: "T5", Fri: "T6", Sat: "T7", Sun: "CN" };
   const toggleDay = (d) =>
@@ -245,18 +227,19 @@ function CaiDat() {
 
         <div className="flex-1 flex flex-col gap-5">
 
+          {/* TÀI KHOẢN */}
           {activeTab === "profile" && (
             <>
               <div className="bg-white rounded-3xl shadow-md p-6">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
                   <div className="relative shrink-0">
-                    {user?.image ? (
-                      <img src={user.image} alt="Avatar" className="w-20 h-20 rounded-full object-cover shadow-md" />
-                    ) : (
-                      <div className="w-20 h-20 rounded-full bg-orange-500 flex items-center justify-center text-white text-3xl font-bold shadow-md">
-                        {getInitials(profile.name || "U")}
-                      </div>
-                    )}
+                    <AvatarInitials
+                      name={profile.name || "U"}
+                      id={user?.maNv || user?.id}
+                      image={user?.image}
+                      size="xl"
+                      className="bg-orange-500! shadow-md"
+                    />
                     <span className="absolute bottom-0 right-0 w-5 h-5 bg-emerald-400 rounded-full border-2 border-white" />
                   </div>
                   <div className="flex-1 text-center sm:text-left">
@@ -271,9 +254,6 @@ function CaiDat() {
                       </span>
                     </div>
                   </div>
-                  <button className="px-4 py-2 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition">
-                    Đổi ảnh
-                  </button>
                 </div>
               </div>
 
@@ -325,7 +305,7 @@ function CaiDat() {
             </>
           )}
 
-          {/* tab bao mat */}
+          {/* BẢO MẬT  */}
           {activeTab === "security" && (
             <>
               <Section title="Đổi mật khẩu" description="Mật khẩu mới phải có ít nhất 6 ký tự">
@@ -389,85 +369,38 @@ function CaiDat() {
                   <div className="flex justify-end pt-2">
                     <button
                       type="submit"
-                      className="px-6 py-2.5 bg-[#0d1c42] hover:bg-[#1e40af] text-white rounded-xl text-sm font-medium transition flex items-center gap-2"
+                      disabled={savingPassword}
+                      className="px-6 py-2.5 bg-[#0d1c42] hover:bg-[#1e40af] text-white rounded-xl text-sm font-medium transition flex items-center gap-2 disabled:opacity-50"
                     >
                       <Icon.Lock />
-                      Đổi mật khẩu
+                      {savingPassword ? "Đang xử lý..." : "Đổi mật khẩu"}
                     </button>
                   </div>
                 </form>
               </Section>
-
-
             </>
           )}
 
-          {/*  tab thông báo  */}
-          {activeTab === "notifications" && (
-            <Section title="Cài đặt thông báo" description="Chọn loại thông báo bạn muốn nhận">
-              <div className="flex flex-col gap-1">
-                {[
-                  { key: "emailLogin", label: "Thông báo đăng nhập", desc: "Gửi email khi có đăng nhập mới vào tài khoản", group: "Email" },
-                  { key: "emailPayroll", label: "Bảng lương hàng tháng", desc: "Gửi email khi bảng lương được chốt", group: "Email" },
-                  { key: "emailAttendance", label: "Cảnh báo chấm công", desc: "Gửi email khi nhân viên quên check-out", group: "Email" },
-                  { key: "browserPush", label: "Thông báo trình duyệt", desc: "Nhận thông báo pop-up trên trình duyệt", group: "Hệ thống" },
-                  { key: "weeklyReport", label: "Báo cáo tuần", desc: "Tự động tổng hợp dữ liệu cuối tuần", group: "Hệ thống" },
-                  { key: "monthlyReport", label: "Báo cáo tháng", desc: "Tự động tổng hợp dữ liệu cuối tháng", group: "Hệ thống" },
-                ].reduce((acc, item) => {
-                  if (!acc.groups[item.group]) acc.groups[item.group] = [];
-                  acc.groups[item.group].push(item);
-                  return acc;
-                }, { groups: {} }) &&
-                  Object.entries(
-                    [
-                      { key: "emailLogin", label: "Thông báo đăng nhập", desc: "Gửi email khi có đăng nhập mới vào tài khoản", group: "Email" },
-                      { key: "emailPayroll", label: "Bảng lương hàng tháng", desc: "Gửi email khi bảng lương được chốt", group: "Email" },
-                      { key: "emailAttendance", label: "Cảnh báo chấm công", desc: "Gửi email khi nhân viên quên check-out", group: "Email" },
-                      { key: "browserPush", label: "Thông báo trình duyệt", desc: "Nhận thông báo pop-up trên trình duyệt", group: "Hệ thống" },
-                      { key: "weeklyReport", label: "Báo cáo tuần", desc: "Tự động tổng hợp dữ liệu cuối tuần", group: "Hệ thống" },
-                      { key: "monthlyReport", label: "Báo cáo tháng", desc: "Tự động tổng hợp dữ liệu cuối tháng", group: "Hệ thống" },
-                    ].reduce((acc, item) => {
-                      if (!acc[item.group]) acc[item.group] = [];
-                      acc[item.group].push(item);
-                      return acc;
-                    }, {})
-                  ).map(([group, items]) => (
-                    <div key={group} className="mb-6">
-                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">{group}</p>
-                      <div className="flex flex-col gap-3">
-                        {items.map(({ key, label, desc }) => (
-                          <div key={key} className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition">
-                            <div>
-                              <p className="text-sm font-medium text-slate-700">{label}</p>
-                              <p className="text-xs text-slate-400 mt-0.5">{desc}</p>
-                            </div>
-                            <Toggle
-                              checked={notifs[key]}
-                              onChange={(v) => setNotifs((n) => ({ ...n, [key]: v }))}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))
-                }
-              </div>
-
-              <div className="flex justify-end mt-2">
-                <button
-                  onClick={handleNotifSave}
-                  className="px-6 py-2.5 bg-[#0d1c42] hover:bg-[#1e40af] text-white rounded-xl text-sm font-medium transition flex items-center gap-2"
-                >
-                  <Icon.Check />
-                  Lưu cài đặt
-                </button>
-              </div>
-            </Section>
-          )}
-
-          {/* tab he thong */}
+          {/* HỆ THỐNG*/}
           {activeTab === "system" && (
             <>
+              {/* Hướng giao diện (RTL) */}
+              <Section title="Hướng giao diện" description="Chuyển đổi hướng hiển thị giao diện">
+                <div className="flex flex-col gap-4">
+                  <Field label="Hướng giao diện (RTL)" hint="Đổi sidebar và layout sang phải-trái">
+                    <div className="flex items-center gap-4">
+                      <Toggle checked={rtl} onChange={handleRtlToggle} />
+                      <span className="text-sm text-slate-600">
+                        {rtl ? "Phải sang trái (RTL)" : "Trái sang phải (LTR)"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-2">
+                      Bật RTL sẽ đổi sidebar sang bên phải, text align ngược lại. Dùng prop <code className="bg-slate-100 px-1 rounded">rtl</code> của thư viện <code className="bg-slate-100 px-1 rounded">react-pro-sidebar</code>.
+                    </p>
+                  </Field>
+                </div>
+              </Section>
+
               <Section title="Giờ làm việc" description="Cấu hình thời gian làm việc mặc định của công ty">
                 <div className="flex flex-col gap-5">
                   <Field label="Giờ bắt đầu">
@@ -521,8 +454,6 @@ function CaiDat() {
                   </Field>
                 </div>
               </Section>
-
-
 
               <div className="flex justify-end">
                 <button

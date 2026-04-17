@@ -1,9 +1,24 @@
+import { useState, useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import SideBar from "./components/SideBar";
 import Header from "./components/Header";
 
 function Layout() {
   const { pathname } = useLocation();
+
+  const [rtl, setRtl] = useState(() => localStorage.getItem("rtl") === "true");
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setRtl(localStorage.getItem("rtl") === "true");
+    };
+    window.addEventListener("storage", handleStorageChange);
+
+    window.addEventListener("rtlChanged", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("rtlChanged", handleStorageChange);
+    };
+  }, []);
 
   const routeTitleMap = {
     "/": "Dashboard",
@@ -19,8 +34,8 @@ function Layout() {
   const title = routeTitleMap[pathname] || "";
 
   return (
-    <div className="flex min-h-screen bg-slate-100 text-slate-800">
-      <SideBar />
+    <div className={`flex min-h-screen bg-slate-100 text-slate-800`} dir={rtl ? "rtl" : "ltr"}>
+      <SideBar rtl={rtl} />
       <main className="flex-1 overflow-auto">
         {title && <Header title={title} />}
 

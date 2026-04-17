@@ -1,8 +1,9 @@
 import * as XLSX from 'xlsx';
+import { toast } from 'react-toastify';
 
 export const exportToExcel = (data, filename) => {
   if (!data || data.length === 0) {
-    alert("Không có dữ liệu để xuất");
+    toast.warning("Không có dữ liệu để xuất");
     return;
   }
 
