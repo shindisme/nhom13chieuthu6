@@ -9,6 +9,17 @@ const formatToMySQLDate = (dateStr) => {
 
     return dateStr;
 };
+const generateBaseEmail = (hoTen) => {
+    if (!hoTen) return "user";
+    const nameWithoutAccent = hoTen.normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d").replace(/Đ/g, "D");
+    const parts = nameWithoutAccent.toLowerCase().trim().split(/\s+/);
+    if (parts.length < 2) return parts[0];
+    const ten = parts.pop();
+    const hoLot = parts.join("");
+    return `${ten}.${hoLot}`;
+};
 
 export const getAllNhanVien = async (req, res) => {
     try {
@@ -32,35 +43,36 @@ export const getNhanVienById = async (req, res) => {
 };
 
 export const createNhanVien = async (req, res) => {
-    const { HoTen, GioiTinh, NgaySinh, SDT, DiaChi, NgayBatDau, MaPB, MaCV, Email } = req.body;
+    const { HoTen, GioiTinh, NgaySinh, SDT, DiaChi, NgayBatDau, MaPB, MaCV } = req.body;
 
     if (!HoTen?.trim()) {
         return res.status(400).json({ success: false, message: "Họ tên không được để trống" });
     }
 
-    if (!Email || !Email.trim()) {
-        return res.status(400).json({ success: false, message: "Email không được để trống" });
-    }
-
     try {
-        // Kiểm tra email hợp lệ
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(Email.trim())) {
-            return res.status(400).json({ success: false, message: "Email không hợp lệ" });
-        }
-
-        // Kiểm tra email trùng
         const connection = await db;
-        const [rows] = await connection.execute(
-            "SELECT COUNT(*) as count FROM taikhoan WHERE Email = ?",
-            [Email.trim()]
-        );
-        if (rows[0].count > 0) {
-            return res.status(400).json({ success: false, message: "Email đã tồn tại trong hệ thống" });
+        
+        // --- LOGIC TỰ ĐỘNG TẠO EMAIL VÀ CHECK TRÙNG ---
+        const baseEmail = generateBaseEmail(HoTen);
+        const domain = "@company.com";
+        let autoEmail = baseEmail + domain;
+        let counter = 1;
+
+        while (true) {
+            const [rows] = await connection.execute(
+                "SELECT COUNT(*) as count FROM taikhoan WHERE Email = ?",
+                [autoEmail]
+            );
+            
+            if (rows[0].count === 0) break; // Email này dùng được!
+
+            // Nếu đã tồn tại, cộng thêm số (vd: dung.nguyenvy2@company.com)
+            counter++;
+            autoEmail = `${baseEmail}${counter}${domain}`;
         }
+        // ----------------------------------------------
 
-        const autoEmail = Email.trim();
-
+        // Lưu thông tin nhân viên
         const result = await NhanVienModel.createNhanVienModel({
             HoTen: HoTen.trim(),
             GioiTinh: (GioiTinh === 'Nu' || GioiTinh === 'Nữ') ? 'Nữ' : 'Nam',
@@ -75,6 +87,8 @@ export const createNhanVien = async (req, res) => {
         const newMaNV = result.insertId;
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash("123456", salt);
+
+        // Tạo tài khoản với Email tự sinh
         await createTaiKhoanModel({
             Email: autoEmail,
             MatKhau: hashedPassword,
@@ -87,7 +101,9 @@ export const createNhanVien = async (req, res) => {
             message: "Thêm nhân viên và tạo tài khoản thành công!",
             data: {
                 MaNV: newMaNV,
-                EmailCapPhat: autoEmail
+                HoTen: HoTen.trim(),
+                EmailCapPhat: autoEmail, // Trả về để Admin biết email là gì
+                MatKhauMặcĐịnh: "123456"
             }
         });
 
@@ -107,21 +123,13 @@ export const updateNhanVien = async (req, res) => {
         if (!Email || !Email.trim()) {
             return res.status(400).json({ success: false, message: "Email không được để trống" });
         }
-        
+
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(Email.trim())) {
             return res.status(400).json({ success: false, message: "Email không hợp lệ" });
         }
-        
-        const connection = await db;
-        const [rows] = await connection.execute(
-            "SELECT COUNT(*) as count FROM taikhoan WHERE Email = ? AND MaNV != ?",
-            [Email.trim(), id]
-        );
-        if (rows[0].count > 0) {
-            return res.status(400).json({ success: false, message: "Email đã tồn tại trong hệ thống" });
-        }
 
+        const connection = await db;
         const updateData = {
             HoTen: HoTen?.trim(),
             GioiTinh: (GioiTinh === 'Nu' || GioiTinh === 'Nữ') ? 'Nữ' : 'Nam',
