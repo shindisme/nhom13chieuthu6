@@ -51,8 +51,6 @@ export const createNhanVien = async (req, res) => {
 
     try {
         const connection = await db;
-        
-        // --- LOGIC TỰ ĐỘNG TẠO EMAIL VÀ CHECK TRÙNG ---
         const baseEmail = generateBaseEmail(HoTen);
         const domain = "@company.com";
         let autoEmail = baseEmail + domain;
@@ -64,15 +62,10 @@ export const createNhanVien = async (req, res) => {
                 [autoEmail]
             );
             
-            if (rows[0].count === 0) break; // Email này dùng được!
-
-            // Nếu đã tồn tại, cộng thêm số (vd: dung.nguyenvy2@company.com)
+            if (rows[0].count === 0) break;
             counter++;
             autoEmail = `${baseEmail}${counter}${domain}`;
         }
-        // ----------------------------------------------
-
-        // Lưu thông tin nhân viên
         const result = await NhanVienModel.createNhanVienModel({
             HoTen: HoTen.trim(),
             GioiTinh: (GioiTinh === 'Nu' || GioiTinh === 'Nữ') ? 'Nữ' : 'Nam',
@@ -87,8 +80,6 @@ export const createNhanVien = async (req, res) => {
         const newMaNV = result.insertId;
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash("123456", salt);
-
-        // Tạo tài khoản với Email tự sinh
         await createTaiKhoanModel({
             Email: autoEmail,
             MatKhau: hashedPassword,
@@ -102,7 +93,7 @@ export const createNhanVien = async (req, res) => {
             data: {
                 MaNV: newMaNV,
                 HoTen: HoTen.trim(),
-                EmailCapPhat: autoEmail, // Trả về để Admin biết email là gì
+                EmailCapPhat: autoEmail, 
                 MatKhauMặcĐịnh: "123456"
             }
         });
