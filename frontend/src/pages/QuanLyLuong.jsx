@@ -78,7 +78,7 @@ function QuanLyLuong() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
+    <div className="min-h-screen p-6">
       <div className="mb-6 rounded-3xl bg-white p-6 shadow-md transition-shadow hover:shadow-lg">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
@@ -200,7 +200,7 @@ function QuanLyLuong() {
       )}
 
       {deleteTarget && (
-        <LuongDeleteConfirm 
+        <LuongDeleteConfirm
           record={deleteTarget}
           onClose={() => setDeleteTarget(null)}
           onDeleted={handleDeleted}
