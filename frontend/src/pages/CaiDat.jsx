@@ -386,18 +386,15 @@ function CaiDat() {
           {activeTab === "system" && (
             <>
               {/* Hướng giao diện (RTL) */}
-              <Section title="Hướng giao diện" description="Chuyển đổi hướng hiển thị giao diện">
+              <Section title="Hướng giao diện" >
                 <div className="flex flex-col gap-4">
-                  <Field label="Hướng giao diện (RTL)" hint="Đổi sidebar và layout sang phải-trái">
+                  <Field label="Hướng giao diện (RTL)">
                     <div className="flex items-center gap-4">
                       <Toggle checked={rtl} onChange={handleRtlToggle} />
                       <span className="text-sm text-slate-600">
                         {rtl ? "Phải sang trái (RTL)" : "Trái sang phải (LTR)"}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400 mt-2">
-                      Bật RTL sẽ đổi sidebar sang bên phải, text align ngược lại. Dùng prop <code className="bg-slate-100 px-1 rounded">rtl</code> của thư viện <code className="bg-slate-100 px-1 rounded">react-pro-sidebar</code>.
-                    </p>
                   </Field>
                 </div>
               </Section>

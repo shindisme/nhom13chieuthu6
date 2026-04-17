@@ -81,7 +81,7 @@ function BangLuong() {
       "Lương cơ bản": formatMoney(row.basicSalary),
       "Phụ cấp": formatMoney(row.allowance),
       "Tổng ca": row.totalShifts,
-      "Thực lĩnh": formatMoney(row.netSalary),
+      "Thực lãnh": formatMoney(row.netSalary),
     }));
     exportToExcel(exportData, `BangLuong_Thang_${new Date().getMonth() + 1}_${new Date().getFullYear()}`);
   };
@@ -161,7 +161,7 @@ function BangLuong() {
                 <th className="px-4 py-3">Lương cơ bản</th>
                 <th className="px-4 py-3">Phụ cấp</th>
                 <th className="px-4 py-3">Tổng ca</th>
-                <th className="px-4 py-3 font-semibold text-slate-900">Thực lĩnh</th>
+                <th className="px-4 py-3 font-semibold text-slate-900">Thực lãnh</th>
               </tr>
             </thead>
             <tbody>
