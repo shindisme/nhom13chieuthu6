@@ -135,11 +135,12 @@ function CaiDat() {
       if (user?.maNv) {
         await nhanVienService.update(user.maNv, {
           HoTen: profile.name,
-          SDT: profile.phone
+          SDT: profile.phone,
+          Email: profile.email
         });
 
         // Update local memory
-        const updatedUser = { ...user, name: profile.name, phone: profile.phone };
+        const updatedUser = { ...user, name: profile.name, phone: profile.phone, email: profile.email };
         localStorage.setItem("user", JSON.stringify(updatedUser));
       }
 
