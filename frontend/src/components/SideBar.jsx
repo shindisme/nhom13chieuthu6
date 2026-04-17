@@ -157,7 +157,7 @@ function SideBar({ rtl = false }) {
                 flexShrink: 0,
               }}
             >
-              <div className={`flex items-center ${collapsed ? "justify-center" : "gap-3"}`}>
+              {/* <div className={`flex items-center ${collapsed ? "justify-center" : "gap-3"}`}>
                 <AvatarInitials
                   name={user.name || user.email || "Người dùng"}
                   id={user.maNv || user.id}
@@ -175,7 +175,7 @@ function SideBar({ rtl = false }) {
                     </p>
                   </div>
                 )}
-              </div>
+              </div> */}
             </div>
           )}
         </div>

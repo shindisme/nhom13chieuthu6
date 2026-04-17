@@ -92,7 +92,6 @@ function NhanVienModal({ mode, record, departments, onClose, onSaved }) {
                 value={form.Email}
                 onChange={handleChange}
                 className={inputCls}
-                placeholder="example@gmail.com"
                 disabled={isEdit}
               />
             </div>
