@@ -37,8 +37,11 @@ function BangLuong() {
       const basicSalary = basicSalaryConfig * heSo;
       const totalShifts = parseFloat(bl.TongCa) || 0;
 
+      const workingDays = 26;
+      const dailySalary = basicSalary / workingDays;
+
       const netSalary = (bl.TongLuong != null) ? parseFloat(bl.TongLuong)
-        : basicSalary + allowance;
+        : totalShifts > 0 ? dailySalary * totalShifts + allowance : basicSalary + allowance;
 
       const name = nv.HoTen || "Unknown";
 
@@ -56,7 +59,7 @@ function BangLuong() {
         daChot: !!bl.MaBangLuong
       };
     });
-  }, [bgRes, nvRes, luongRes, nam]);
+  }, [bgRes, nvRes, luongRes]);
 
   const filteredRows = useMemo(() => {
     return rawRows.filter((row) => {
@@ -81,7 +84,7 @@ function BangLuong() {
       "Lương cơ bản": formatMoney(row.basicSalary),
       "Phụ cấp": formatMoney(row.allowance),
       "Tổng ca": row.totalShifts,
-      "Thực lĩnh": formatMoney(row.netSalary),
+      "Thực lãnh": formatMoney(row.netSalary),
     }));
     exportToExcel(exportData, `BangLuong_Thang_${new Date().getMonth() + 1}_${new Date().getFullYear()}`);
   };
