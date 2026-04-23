@@ -61,7 +61,7 @@ export const createNhanVien = async (req, res) => {
                 "SELECT COUNT(*) as count FROM taikhoan WHERE Email = ?",
                 [autoEmail]
             );
-            
+
             if (rows[0].count === 0) break;
             counter++;
             autoEmail = `${baseEmail}${counter}${domain}`;
@@ -93,7 +93,7 @@ export const createNhanVien = async (req, res) => {
             data: {
                 MaNV: newMaNV,
                 HoTen: HoTen.trim(),
-                EmailCapPhat: autoEmail, 
+                EmailCapPhat: autoEmail,
                 MatKhauMặcĐịnh: "123456"
             }
         });
