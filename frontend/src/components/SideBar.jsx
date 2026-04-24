@@ -39,10 +39,12 @@ function SideBar(
   };
 
   return (
-    <aside className="sticky top-0 h-screen shrink-0">
+    <aside className="sticky top-0 h-screen shrink-0 z-40">
       <Sidebar
         collapsed={collapsed}
+        // onBackdropClick=
         // rtl={rtl}
+        breakPoint="md"
         backgroundColor="#0d1c42"
         rootStyles={{
           height: "100%",
