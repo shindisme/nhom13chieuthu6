@@ -5,7 +5,6 @@ import ChamCong from "./pages/ChamCong.jsx";
 import BangLuong from "./pages/BangLuong.jsx";
 import PhongBan from "./pages/PhongBan.jsx";
 import QuanLyLuong from "./pages/QuanLyLuong.jsx";
-import BaoCao from "./pages/BaoCao.jsx";
 import CaiDat from "./pages/CaiDat.jsx";
 import Layout from "./Layout.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -24,25 +23,21 @@ function App() {
         {/* Public route */}
         <Route path="/login" element={<Login />} />
 
-        {/* Protected routes */}
-        <Route
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
+        <Route element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }>
           <Route path="/" element={<Dashboard />} />
           <Route path="/nhan-vien" element={<NhanVien />} />
           <Route path="/cham-cong" element={<ChamCong />} />
           <Route path="/phong-ban" element={<PhongBan />} />
           <Route path="/quan-ly-luong" element={<QuanLyLuong />} />
           <Route path="/bang-luong" element={<BangLuong />} />
-          <Route path="/bao-cao" element={<BaoCao />} />
           <Route path="/cai-dat" element={<CaiDat />} />
         </Route>
 
-        {/* Catch all - redirect về login */}
+        {/*redirect về login */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
