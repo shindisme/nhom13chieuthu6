@@ -32,10 +32,8 @@ function NhanVienModal({ mode, record, departments, onClose, onSaved }) {
     try {
       setSaving(true);
       const payload = { ...form };
-      // Chỉ gửi email khi thêm mới
       if (isEdit) {
-        // delete payload.Email;
-        // await nhanVienService.update(record.MaNV, payload);
+        await nhanVienService.update(record.MaNV, payload);
         toast.success("Cập nhật nhân viên thành công");
       } else {
         await nhanVienService.insert(payload);
@@ -56,7 +54,6 @@ function NhanVienModal({ mode, record, departments, onClose, onSaved }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden max-h-[90vh] flex flex-col">
-        {/* tieu de modal */}
         <div className="bg-[#0d1c42] px-6 py-4 flex items-center justify-between shrink-0">
           <h2 className="text-white font-semibold text-base">
             {isEdit ? "Chỉnh sửa nhân viên" : "Thêm nhân viên mới"}

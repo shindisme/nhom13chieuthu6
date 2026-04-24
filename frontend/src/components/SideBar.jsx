@@ -4,12 +4,13 @@ import { Link, useLocation } from "react-router-dom";
 import { Home, Users, Building, FileClock, Cog, CreditCard, Settings, ChevronLeft, ChevronRight } from "lucide-react";
 import AvatarInitials from "./common/AvatarInitials";
 
-function SideBar({ rtl = false }) {
+function SideBar(
+  // { rtl = false }
+) {
   const location = useLocation();
   const userData = localStorage.getItem("user");
   const user = userData ? JSON.parse(userData) : null;
 
-  // Persist collapse state
   const [collapsed, setCollapsed] = useState(() => {
     const saved = localStorage.getItem("sidebarCollapsed");
     return saved === "true";
@@ -41,7 +42,7 @@ function SideBar({ rtl = false }) {
     <aside className="sticky top-0 h-screen shrink-0">
       <Sidebar
         collapsed={collapsed}
-        rtl={rtl}
+        // rtl={rtl}
         backgroundColor="#0d1c42"
         rootStyles={{
           height: "100%",
@@ -62,11 +63,10 @@ function SideBar({ rtl = false }) {
               </h1>
             )}
             <span className="text-slate-400 shrink-0 mx-auto">
-              {collapsed ? (
-                rtl ? <ChevronLeft size={18} /> : <ChevronRight size={18} />
-              ) : (
-                rtl ? <ChevronRight size={18} /> : <ChevronLeft size={18} />
-              )}
+              {collapsed
+                ? (<ChevronLeft size={18} />)
+                : (<ChevronRight size={18} />)
+              }
             </span>
           </button>
 

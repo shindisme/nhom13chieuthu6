@@ -120,7 +120,7 @@ function CaiDat() {
   });
 
   // RTL state
-  const [rtl, setRtl] = useState(() => localStorage.getItem("rtl") === "true");
+  // const [rtl, setRtl] = useState(() => localStorage.getItem("rtl") === "true");
 
   /*  handlers  */
   const handleProfileSave = async (e) => {
@@ -173,12 +173,11 @@ function CaiDat() {
 
   const handleSystemSave = () => toast.success("Cài đặt hệ thống đã được lưu!");
 
-  const handleRtlToggle = (value) => {
-    setRtl(value);
-    localStorage.setItem("rtl", value);
-    // Dispatch custom event để Layout lắng nghe
-    window.dispatchEvent(new Event("rtlChanged"));
-  };
+  // const handleRtlToggle = (value) => {
+  //   setRtl(value);
+  //   localStorage.setItem("rtl", value);
+  //   window.dispatchEvent(new Event("rtlChanged"));
+  // };
 
   const dayLabels = { Mon: "T2", Tue: "T3", Wed: "T4", Thu: "T5", Fri: "T6", Sat: "T7", Sun: "CN" };
   const toggleDay = (d) =>
@@ -385,8 +384,7 @@ function CaiDat() {
           {/* HỆ THỐNG*/}
           {activeTab === "system" && (
             <>
-              {/* Hướng giao diện (RTL) */}
-              <Section title="Hướng giao diện" >
+              {/* <Section title="Hướng giao diện" >
                 <div className="flex flex-col gap-4">
                   <Field label="Hướng giao diện (RTL)">
                     <div className="flex items-center gap-4">
@@ -397,7 +395,7 @@ function CaiDat() {
                     </div>
                   </Field>
                 </div>
-              </Section>
+              </Section> */}
 
               <Section title="Giờ làm việc" description="Cấu hình thời gian làm việc mặc định của công ty">
                 <div className="flex flex-col gap-5">
